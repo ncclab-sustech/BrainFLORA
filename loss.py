@@ -32,24 +32,24 @@ class SupConLoss(nn.Module):
         device = features.device
 
         if len(features.shape) < 3:
-            raise ValueError('`features` 需要是 [batch_size, n_views, ...] 的张量')
+            raise ValueError('`features` needs to be a tensor of [batch_size, n_views, ...]')
         if len(features.shape) > 3:
             features = features.view(features.shape[0], features.shape[1], -1)
 
         batch_size = features.shape[0]
         n_views = features.shape[1]
 
-        # 特征归一化
-        features = F.normalize(features, dim=2, eps=1e-8)  # 加入 eps 避免归一化全零向量
+        # Feature normalization
+        features = F.normalize(features, dim=2, eps=1e-8)  # Add eps to avoid normalizing zero vectors
 
         if labels is not None and mask is not None:
-            raise ValueError('不能同时指定 `labels` 和 `mask`')
+            raise ValueError('Cannot specify both `labels` and `mask`')
         elif labels is None and mask is None:
             mask = torch.eye(batch_size, dtype=torch.float32).to(device)
         elif labels is not None:
             labels = labels.contiguous().view(-1, 1)
             if labels.shape[0] != batch_size:
-                raise ValueError('标签数量与特征数量不匹配')
+                raise ValueError('Number of labels does not match number of features')
             mask = torch.eq(labels, labels.T).float().to(device)
         else:
             mask = mask.float().to(device)
@@ -63,57 +63,57 @@ class SupConLoss(nn.Module):
             anchor_feature = contrast_feature
             anchor_count = contrast_count
         else:
-            raise ValueError('无效的 `contrast_mode`')
+            raise ValueError('Invalid `contrast_mode`')
 
-        # 计算相似度矩阵
+        # Calculate similarity matrix
         similarity_matrix = torch.matmul(anchor_feature, contrast_feature.T) / self.temperature
-        similarity_matrix = torch.clamp(similarity_matrix, min=-20, max=20)  # 限制值的范围
+        similarity_matrix = torch.clamp(similarity_matrix, min=-20, max=20)  # Limit value range
 
-        # 生成标签掩码
+        # Generate label mask
         mask = mask.repeat(anchor_count, contrast_count)
 
-        # 对角线不算作正样本
+        # Diagonal does not count as positive samples
         logits_mask = torch.ones_like(mask) - torch.eye(mask.shape[0]).to(device)
         mask = mask * logits_mask
 
-        # 计算 log_prob
+        # Calculate log_prob
         exp_sim = torch.exp(similarity_matrix) * logits_mask
-        log_prob = similarity_matrix - torch.log(exp_sim.sum(1, keepdim=True) + 1e-8)  # 避免 log(0)
+        log_prob = similarity_matrix - torch.log(exp_sim.sum(1, keepdim=True) + 1e-8)  # Avoid log(0)
 
-        # 计算平均正样本 log_prob
-        mean_log_prob_pos = (mask * log_prob).sum(1) / (mask.sum(1) + 1e-8)  # 避免除零
+        # Calculate average positive sample log_prob
+        mean_log_prob_pos = (mask * log_prob).sum(1) / (mask.sum(1) + 1e-8)  # Avoid division by zero
 
-        # 计算损失
+        # Calculate loss
         loss = - (self.temperature / self.base_temperature) * mean_log_prob_pos
         loss = loss.mean()
 
         return loss
 
 def mixco_timeseries(neural_data, beta=0.15, s_thresh=0.5, perm=None, betas=None, select=None):
-    # 如果 perm 为空，随机生成排列索引，针对 timelength 维度打乱
+    # If perm is None, randomly generate permutation indices and shuffle timelength dimension
     if perm is None:
-        perm = torch.randperm(neural_data.shape[1])  # 对 timelength 维度打乱
+        perm = torch.randperm(neural_data.shape[1])  # Shuffle timelength dimension
         
-    # 对 neural_data 的 timelength 维度进行打乱
+    # Shuffle the timelength dimension of neural_data
     neural_data_shuffle = neural_data[:, perm].to(neural_data.device, dtype=neural_data.dtype)
     
-    # 如果 betas 为空，从 Beta 分布中采样 betas，基于 timelength
+    # If betas is None, sample betas from Beta distribution based on timelength
     if betas is None:
         betas = torch.distributions.Beta(beta, beta).sample([neural_data.shape[1]]).to(neural_data.device, dtype=neural_data.dtype)
     
-    # 如果 select 为空，基于 s_thresh 随机选择哪些 timelength 进行混合
+    # If select is None, randomly select which timelength to mix based on s_thresh
     if select is None:
         select = (torch.rand(neural_data.shape[1]) <= s_thresh).to(neural_data.device)
     
-    # 计算 betas 的形状，保持与 timelength 维度兼容
-    betas_shape = [1] * len(neural_data.shape)  # 保持除 timelength 外的其他维度不变
-    betas_shape[1] = -1  # 只调整 timelength 维度
+    # Calculate betas shape, keeping compatibility with timelength dimension
+    betas_shape = [1] * len(neural_data.shape)  # Keep other dimensions unchanged except timelength
+    betas_shape[1] = -1  # Only adjust timelength dimension
     
-    # 对选择的 timelength 进行混合操作
+    # Mix operation for selected timelength
     neural_data[:, select] = neural_data[:, select] * betas[select].reshape(*betas_shape) + \
         neural_data_shuffle[:, select] * (1 - betas[select]).reshape(*betas_shape)
     
-    # 对未选择的 timelength，betas 保持为 1
+    # For unselected timelength, betas remains 1
     betas[~select] = 1
     
     return neural_data, perm, betas, select

@@ -45,42 +45,78 @@ Overall architecture of BrainFLORA.
 <!-- ## News -->
 <h2 style="border-bottom: 1px solid lightgray; margin-bottom: 5px;">🐣 Update</h2>
 
+* **2025/12/21**, we released the preprocessed datasets and pretrained checkpoints on [🤗 Hugging Face](https://huggingface.co/datasets/LidongYang/BrainFLORA).
 * **2025/07/15**, the [arxiv](https://arxiv.org/abs/2507.09747) paper is public.
 * **2025/07/12**, we officially released the code.
 * **2025/07/05**, BrainFLORA is accepted by *ACM MM 2025*.
 
 
 <!-- ## Environment setup -->
-<h2 style="border-bottom: 1px solid lightgray; margin-bottom: 5px;">🛠️Environment setup</h2>
+<h2 style="border-bottom: 1px solid lightgray; margin-bottom: 5px;">🛠️ Environment Setup</h2>
 
-Run ``setup.sh`` to quickly create a conda environment that contains the packages necessary to run our scripts; activate the environment with conda activate BrainFLORA.
+### Quick Start
 
-
+**Option 1: Using setup script (Recommended)**
+```bash
+bash setup.sh
+conda activate BrainFLORA
 ```
-. setup.sh
-```
 
-You can also create a new conda environment and install the required dependencies by running
-```
+**Option 2: Using conda environment file**
+```bash
 conda env create -f environment.yml
 conda activate BrainFLORA
 ```
 
+**Option 3: Using pip**
+```bash
+pip install -r requirements.txt
+```
+
+**Important: Install as editable package**
+
+After setting up the environment using any of the above options, install the project in editable mode to enable proper module imports:
+```bash
+pip install -e .
+```
+
 <!-- ## Prepare for Dataset -->
 
-To download the raw data，you can follow：
+<h2 style="border-bottom: 1px solid lightgray; margin-bottom: 5px;">📊 Dataset Preparation</h2>
+
+### Option 1: Using Preprocessed Data (Recommended)
+
+We provide preprocessed datasets ready for training on Hugging Face:
+
+```python
+from datasets import load_dataset
+
+# Load the preprocessed BrainFLORA dataset
+dataset = load_dataset("LidongYang/BrainFLORA")
+
+# Access training and test splits
+train_data = dataset['train']
+test_data = dataset['test']
+```
+
+
+👉 **[Download from Hugging Face](https://huggingface.co/datasets/LidongYang/BrainFLORA)**
+
+### Option 2: Download Raw Data
+
+To download and preprocess the raw data yourself:
+
 Dataset | Download path| Dataset | Download path
 :---: | :---:|:---: | :---:
 THINGS-EEG1 |  [Download](https://openneuro.org/datasets/ds003825/versions/1.1.0) | THINGS-EEG2 | [Download](https://osf.io/3jk45/)
 THINGS-MEG |  [Download](https://openneuro.org/datasets/ds004212/versions/2.0.0)| THINGS-fMRI  |  [Download](https://openneuro.org/datasets/ds004192/versions/1.0.7)
 THINGS-Images |  [Download](https://osf.io/rdxy2)
 
-<!-- We will release the processed data (such as THINGS-EEG1, THINGS-EEG2, THINGS-MEG, THINGS-fMRI) on [Huggingface], which can be directly used for training.
- -->
+After downloading, use the preprocessing scripts in `data_preparing/` directory to process the raw data.
 
 
 <!-- ## Quick training and test  -->
-<h2 style="border-bottom: 1px solid lightgray; margin-bottom: 5px;">🚴‍♂️Quick training and test</h2>
+<h2 style="border-bottom: 1px solid lightgray; margin-bottom: 5px;">🚴‍♂️Quick training</h2>
 
 
 #### 1.Visual Retrieval
@@ -93,13 +129,9 @@ python retrieval_joint_train_medformer.py --logger True --gpu cuda:0  --output_d
 Additionally, replicating the results of other modalities (e.g. MEG, fMRI) by run
 ```
 cd Retrieval/
-python retrieval_joint_train_MEG_rerank_medformer.py --logger True --gpu cuda:0  --output_dir ./outputs/contrast
+python Retrieval/retrieval_joint_train_medformer.py --logger True --gpu cuda:0 --output_dir ./outputs/contrast
 ```
-We provide the script to evaluation the models:
-```
-cd eval/
-FLORA_inference.ipynb
-```
+
 
 #### 2.Visual Reconstruction
 We provide quick training and inference scripts for ``high level and low level pipeline`` of visual reconstruction. Please modify your data set path and run zero-shot on test dataset:
@@ -108,22 +140,42 @@ We provide quick training and inference scripts for ``high level and low level p
 python train_unified_encoder_highlevel_diffprior.py --modalities ['eeg', 'meg', 'fmri'] --gpu cuda:0  --output_dir ./outputs/contrast
 ```
 
-```
-# Reconstruct images by assigning modalities and subjects:
-python FLORA_inference_reconst.py
-```
 #### 3.Visual Captioning
 
 We provide scripts for visual caption generation.
 ```
-# step 1: train feature adapter
+# train feature adapter
 python train_unified_encoder_highlevel_diffprior.py --modalities ['eeg', 'meg', 'fmri'] --gpu cuda:0  --output_dir ./outputs/contrast
-
-# step 2: get caption from prior latent
-FLORA_inference_caption.ipynb
-
 ```
 
+<!-- ## Quick training and test  -->
+<h2 style="border-bottom: 1px solid lightgray; margin-bottom: 5px;">🚴‍♂️Quick Evaluation</h2>
+
+#### 1.Visual Retrieval
+We provide the script to evaluation the models:
+```
+cd eval/
+FLORA_inference.ipynb
+```
+
+
+#### 2.Visual Reconstruction
+
+```
+# Reconstruct images by assigning modalities and subjects:
+cd eval/
+python FLORA_inference_reconst.py
+```
+
+
+
+#### 3.Visual Captioning
+
+```
+# Get captions from prior latent
+cd eval/
+FLORA_inference_caption.ipynb
+```
 
 <h2 style="border-bottom: 1px solid lightgray; margin-bottom: 5px;">👍 Citations</h2>
 
@@ -131,11 +183,17 @@ If you find our work useful, please consider citing:
 
 
 ```
-@article{li2025brainflora,
-  title={BrainFLORA: Uncovering Brain Concept Representation via Multimodal Neural Embeddings},
-  author={Li, Dongyang and Qin, Haoyang and Wu, Mingyang and Wei, Chen and Liu, Quanying},
-    journal={arXiv preprint arXiv:2507.09747},
-  year={2025}
+@inproceedings{li2025brainflora,
+  author = {Li, Dongyang and Qin, Haoyang and Wu, Mingyang and Wei, Chen and Liu, Quanying},
+  title = {BrainFLORA: Uncovering Brain Concept Representation via Multimodal Neural Embeddings},
+  year = {2025},
+  isbn = {9798400720352},
+  publisher = {Association for Computing Machinery},
+  address = {New York, NY, USA},
+  url = {https://doi.org/10.1145/3746027.3754996},
+  doi = {10.1145/3746027.3754996},
+  booktitle = {Proceedings of the 33rd ACM International Conference on Multimedia},
+  pages = {5577–5586}
 }
 
 @article{li2024visual,

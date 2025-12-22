@@ -29,14 +29,14 @@ from braindecode.models import EEGNetv4, ATCNet, EEGConformer, EEGITNet, Shallow
 import argparse
 import math
 from fmri_datasets_joint_subjects import fMRIDataset
-sys.path.insert(0,'/mnt/dataset0/ldy/Workspace/EEG_Image_decode/Retrieval')
-sys.path.insert(0,'/mnt/dataset0/ldy/Workspace/EEG_Image_decode/Retrieval/model')
-from umbrae import BrainXS_thingsfmri
-# sys.path.insert(0,'/mnt/dataset0/ldy/Workspace/MindEyeV2/src')
-# from models import BrainNetwork
-sys.path.insert(0,'/mnt/dataset0/ldy/Workspace/neuro_v2l/Code/llava/model/fmri_encoder')
+# External dependencies - modify paths according to your setup or install these packages
+# UMBRAE: https://github.com/weihaox/BrainHub
+# neuro_v2l: external dependency for vit3d
+# sys.path.insert(0, '/path/to/umbrae')
+# from umbrae import BrainXS_thingsfmri
+# sys.path.insert(0, '/path/to/neuro_v2l/Code/llava/model/fmri_encoder')
+# from vit3d import CLIPVision3dModelWithProjection
 from transformers import CLIPVisionConfig
-from vit3d import CLIPVision3dModelWithProjection
 
 class NeV2L(nn.Module):
     def __init__(self):
@@ -703,14 +703,14 @@ def main_train_loop(sub, encoder_type, current_time, model, train_dataloader, te
         
         train_loss, train_accuracy = train_model(model, train_dataloader, optimizer, device, text_features_train_all, img_features_train_all)
        
-        # directory = f"/mnt/dataset0/ldy/Workspace/FLORA/models/{encoder_type}/across/fMRI/{current_time}"
-        directory = f"/mnt/dataset0/ldy/Workspace/FLORA/models/{encoder_type}/in_subject/fMRI/{sub}/{current_time}"
+        # directory = f"./models/{encoder_type}/across/fMRI/{current_time}"
+        directory = f"./models/{encoder_type}/in_subject/fMRI/{sub}/{current_time}"
         if not os.path.exists(directory):
             os.makedirs(directory)
     
         if (epoch+1)%5 == 0:                        
-            # torch.save(model.state_dict(), f"/mnt/dataset0/ldy/Workspace/FLORA/models/{encoder_type}/across/fMRI/{current_time}/{epoch+1}.pth")
-            torch.save(model.state_dict(), f"/mnt/dataset0/ldy/Workspace/FLORA/models/{encoder_type}/in_subject/fMRI/{sub}/{current_time}/{epoch+1}.pth")
+            # torch.save(model.state_dict(), f"./models/{encoder_type}/across/fMRI/{current_time}/{epoch+1}.pth")
+            torch.save(model.state_dict(), f"./models/{encoder_type}/in_subject/fMRI/{sub}/{current_time}/{epoch+1}.pth")
             print("model save in: ", directory)
         train_losses.append(train_loss)
         train_accuracies.append(train_accuracy)
@@ -747,7 +747,7 @@ def main_train_loop(sub, encoder_type, current_time, model, train_dataloader, te
 import datetime
 def main():
     parser = argparse.ArgumentParser(description='Train EEG-Image/Text Model')
-    parser.add_argument('--data_path', type=str, default="/mnt/dataset0/ldy/datasets/fmri_dataset/Preprocessed", help='Path to the preprocessed data')
+    parser.add_argument('--data_path', type=str, default="./data/fmri_dataset/Preprocessed", help='Path to the preprocessed data (modify according to your dataset location)')
     parser.add_argument('--project', type=str, default="train_pos_img_text_rep", help='Project name')
     parser.add_argument('--entity', type=str, default="sustech_rethinkingbci", help='Entity name')
     parser.add_argument('--name', type=str, default="lr=3e-4_img_pos_pro_eeg", help='Experiment name')

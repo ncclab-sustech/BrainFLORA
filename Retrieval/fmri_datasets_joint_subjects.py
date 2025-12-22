@@ -25,8 +25,10 @@ vlmodel, preprocess_train, feature_extractor = open_clip.create_model_and_transf
     precision='fp32', 
     device=device
 )
-# Load configuration
-cfg = OmegaConf.load("/mnt/dataset1/ldy/Workspace/FLORA/configs/config.yaml")
+# Load configuration (relative to project root)
+_current_dir = os.path.dirname(os.path.abspath(__file__))
+_project_root = os.path.dirname(_current_dir)
+cfg = OmegaConf.load(os.path.join(_project_root, "configs/config.yaml"))
 cfg = OmegaConf.structured(cfg)
 img_directory_training = cfg.fmridataset.img_directory_training
 img_directory_test = cfg.fmridataset.img_directory_test
@@ -71,7 +73,8 @@ class fMRIDataset():
         
         # Load or compute features
         if self.classes is None and self.pictures is None:
-            features_filename = ("/mnt/dataset1/ldy/Workspace/EEG_Image_decode/Retrieval/"
+            # Features file path (modify according to your setup)
+            features_filename = os.path.join(_current_dir,
                                f"ori_fMRI_ViT-H-14_features_{'train' if self.train else 'test'}.pt")
             
             if os.path.exists(features_filename):
@@ -280,8 +283,8 @@ class fMRIDataset():
 
 
 if __name__ == "__main__":
-    # Example usage
-    data_path = "/mnt/dataset0/ldy/datasets/fmri_dataset/Preprosessed"
+    # Example usage (modify path according to your dataset location)
+    data_path = "./data/fmri_dataset/Preprocessed"
     train_dataset = fMRIDataset(data_path, subjects=['sub-01', 'sub-02', 'sub-03'], train=True)    
     test_dataset = fMRIDataset(data_path, subjects=['sub-01', 'sub-02', 'sub-03'], train=False)
     

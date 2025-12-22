@@ -385,10 +385,10 @@ def evaluate_model(sub, eeg_model, dataloader, device, text_features_all, img_fe
     top5_acc = 0
     with torch.no_grad():
         for batch_idx, (eeg_data, labels, text, text_features, img, img_features) in enumerate(dataloader):            
-            # # 使用高斯分布生成与 eeg_data 形状完全相同的张量
-            # noise = torch.randn_like(eeg_data).to(device)  # 标准正态分布，均值=0，标准差=1
+            # # Use Gaussian distribution to generate a tensor with the same shape as eeg_data
+            # noise = torch.randn_like(eeg_data).to(device)  # Standard normal distribution, mean=0, std=1
 
-            # # 将 eeg_data 替换为噪声
+            # # Replace eeg_data with noise
             # eeg_data = noise
             
             eeg_data = eeg_data.to(device)
@@ -635,7 +635,7 @@ import datetime
 def main():
     # Use argparse to parse the command-line arguments
     parser = argparse.ArgumentParser(description='EEG Transformer Training Script')
-    parser.add_argument('--data_path', type=str, default="/home/ldy/THINGS-MEG/preprocessed_newsplit", help='Path to the EEG dataset')
+    parser.add_argument('--data_path', type=str, default="./data/THINGS_MEG/preprocessed_newsplit", help='Path to the MEG dataset')
     parser.add_argument('--output_dir', type=str, default='./outputs/contrast', help='Directory to save output results')    
     parser.add_argument('--project', type=str, default="train_pos_img_text_rep", help='WandB project name')
     parser.add_argument('--entity', type=str, default="sustech_rethinkingbci", help='WandB entity name')

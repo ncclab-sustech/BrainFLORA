@@ -6,22 +6,13 @@ import numpy as np
 import torch
 from torch.utils.data import DataLoader
 
-# Set up project paths
-current_dir = os.getcwd()
-project_root = os.path.abspath(os.path.join(current_dir, '..'))
-if project_root not in sys.path:
-    sys.path.insert(0, project_root)
+# Set up project paths (relative to this file)
+_current_dir = os.path.dirname(os.path.abspath(__file__))
+_project_root = os.path.dirname(_current_dir)
+if _project_root not in sys.path:
+    sys.path.insert(0, _project_root)
 
-# Add additional workspace paths
-additional_paths = [
-    '/mnt/dataset0/ldy/Workspace/EEG_Image_decode_Wrong/Retrieval',
-    '/mnt/dataset0/ldy/Workspace/EEG_Image_decode/Retrieval',
-    '/mnt/dataset0/ldy/Workspace/EEG_Image_decode/Retrieval/model',
-    '/mnt/dataset0/ldy/Workspace/FLORA'
-]
-for path in additional_paths:
-    if path not in sys.path:
-        sys.path.insert(0, path)
+# Project uses editable install - run `pip install -e .` from project root
 
 # Configuration dictionary for model settings
 MODEL_CONFIG = {
@@ -149,12 +140,16 @@ def get_megfeatures(sub, meg_model, dataloader, device, text_features_all, img_f
 
 
 # ======================================== Configuration =============================================
+# MODIFY THESE PATHS ACCORDING TO YOUR SETUP
+DATA_ROOT = "./data"  # Root directory for datasets
+data_path = f"{DATA_ROOT}/THINGS_MEG/preprocessed_newsplit"
+
 test_subjects = ['sub-01', 'sub-02', 'sub-03', 'sub-04']
-device_preference = 'cuda:4'
+device_preference = 'cuda'  # Options: 'cuda', 'cuda:0', 'cpu'
 device_type = 'gpu'
-data_path = "/home/ldy/THINGS-MEG/preprocessed_newsplit"
 device = torch.device(device_preference if device_type == 'gpu' and torch.cuda.is_available() else 'cpu')
 print(f"Using device: {device}")
+print(f"Data path: {data_path}")
 # ======================================== Configuration =============================================
 
 # Experiment setup
@@ -187,7 +182,7 @@ for sub in test_subjects:
     
     # Load appropriate model based on mode
     meg_model = ModelClass()
-    base_path = f"/mnt/dataset1/ldy/Workspace/FLORA/models/{MODEL_CONFIG['model_name']}"
+    base_path = os.path.join(_project_root, f"models/{MODEL_CONFIG['model_name']}")
     
     if mode == 'joint':
         across_dir = os.path.join(base_path, 'across', 'MEG')

@@ -8,8 +8,7 @@ from einops.layers.torch import Rearrange, Reduce
 from torch import Tensor
 from loss import ClipLoss
 
-# 修改为绝对导入路径
-sys.path.append('/mnt/dataset1/ldy/Workspace/FLORA')
+# Import from installed package (use `pip install -e .` from project root)
 from model.Medformer import Medformer
 from layers.Medformer_EncDec import Encoder, EncoderLayer
 from layers.SelfAttention_Family import MedformerLayer

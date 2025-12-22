@@ -1,179 +1,128 @@
+# =============================================================================
+# BrainFLORA Configuration File
+# =============================================================================
+# Main configuration for training multimodal neural encoders
+# Supports EEG, MEG, and fMRI modalities
+
+# -----------------------------------------------------------------------------
+# General Settings
+# -----------------------------------------------------------------------------
 seed: 42
-output_dir: ${hydra:runtime.output_dir}
-domains: mujoco_metaworld # domains to train on
-wb_tag: "default" # wandb tag
-log_interval: 10 # how many steps before logging to wandb
-script_name: "" # log the running script
-pretrained_dir: "" # pretrained model directory
-parallel_eval: False # use ray to do parallel evaluation
-slurm_job_id: "" # the slurm job id for logging purposes
-user_id: "" # the machine user id for logging purposes
+output_dir: ./outputs
+project_name: "BrainFLORA"
+experiment_name: "multimodal_encoder"
+log_interval: 10  # logging frequency (steps)
+save_checkpoints: True
+save_interval: 5  # save checkpoint every N epochs
 
-epoch_size: 10
-total_num_traj: 0
-train_time: 0
-cross_validate: False
-cross_validate_eps_num: 20
-cross_validate_freq: 100
-save_intermedia_models: False
-comment: ""
+# Weights & Biases logging
+wandb:
+  enabled: True
+  project: "BrainFLORA"
+  entity: ""  # your wandb entity
+  tags: ["multimodal", "neural-decoding"]
 
-defaults:
-  - _self_
-  - env: mujoco_metaworld
+# -----------------------------------------------------------------------------
+# Dataset Configuration
+# -----------------------------------------------------------------------------
+# Modify paths according to your dataset location
 
-# dataset config
-eegdataset: 
-  img_directory_training: /mnt/dataset1/ldy/4090_Workspace/4090_THINGS/images_set/training_images
-  img_directory_test: /mnt/dataset1/ldy/4090_Workspace/4090_THINGS/images_set/test_images
-  _target_: hpt.dataset.local_traj_dataset.LocalTrajDataset
-  horizon: 1 # horizon for each dataset sample. not used
-  val_ratio: 0.1 # the train-validation ratio
-  pad_after: 0 # padding after the episode
-  episode_cnt: 10000 # total episodes by default
-  step_cnt: 100000 # total data transitions
+eegdataset:
+  name: "THINGS-EEG"
+  img_directory_training: ./data/THINGS_EEG/images_set/training_images
+  img_directory_test: ./data/THINGS_EEG/images_set/test_images
+  data_path: ./data/THINGS_EEG/preprocessed
+  num_channels: 63
+  seq_len: 250
+  sampling_rate: 250
+  val_ratio: 0.1
 
 megdataset:
-  img_directory_training: /mnt/dataset0/ldy/4090_Workspace/4090_THINGS/osfstorage/THINGS/images_set/training_images/images
-  img_directory_test: /mnt/dataset0/ldy/4090_Workspace/4090_THINGS/osfstorage/THINGS/images_set/test_images/images    
-  _target_: hpt.dataset.local_traj_dataset.LocalTrajDataset
-  horizon: 1 # horizon for each dataset sample. not used
-  val_ratio: 0.1 # the train-validation ratio
-  pad_after: 0 # padding after the episode
-  episode_cnt: 10000 # total episodes by default
-  step_cnt: 100000 # total data transitions
-
+  name: "THINGS-MEG"
+  img_directory_training: ./data/THINGS_MEG/images_set/training_images
+  img_directory_test: ./data/THINGS_MEG/images_set/test_images
+  data_path: ./data/THINGS_MEG/preprocessed
+  num_channels: 222
+  seq_len: 281
+  sampling_rate: 1000
+  val_ratio: 0.1
 
 fmridataset:
-  img_directory_training: /mnt/dataset0/ldy/datasets/fmri_dataset/images/train_images
-  img_directory_test: /mnt/dataset0/ldy/datasets/fmri_dataset/images/test_images  
-  _target_: hpt.dataset.local_traj_dataset.LocalTrajDataset
-  horizon: 1 # horizon for each dataset sample. not used
-  val_ratio: 0.1 # the train-validation ratio
-  pad_after: 0 # padding after the episode
-  episode_cnt: 10000 # total episodes by default
-  step_cnt: 100000 # total data transitions
+  name: "THINGS-fMRI"
+  img_directory_training: ./data/fmri_dataset/images/train_images
+  img_directory_test: ./data/fmri_dataset/images/test_images
+  data_path: ./data/fmri_dataset/preprocessed
+  num_voxels: 1280
+  val_ratio: 0.1
 
-# trunk transformer config
+# -----------------------------------------------------------------------------
+# Model Architecture
+# -----------------------------------------------------------------------------
 network:
-  _target_: hpt.models.policy.Policy
   embed_dim: 1024
-  num_blocks: 16 # num of blocks in the trunk transformer
-  num_heads: 8 # num of heads in the trunk transformer
-  drop_path: 0.1 # drop path in the trunk transformer
-  use_modality_embedding: True # add trainable modality position tokens
-  use_domain_embedding: False # whether to add domain-specific trainable parameters
-  observation_horizon: ${dataset.horizon} # the observation history
-  action_horizon: 1 # open loop action steps. <= the dataset action horizons
-  token_postprocessing: "mean" # maxpool or meanpool the tokens
-  cross_stem_attention: True # use cross attention to combine state and action
-  weight_init_style: 'pytorch' # weight init
-  no_trunk: False # ignore trunk
-  finetune_encoder: False # whether to finetune encoders
+  num_blocks: 16
+  num_heads: 8
+  drop_path: 0.1
+  use_modality_embedding: True
+  token_postprocessing: "mean"  # "mean" or "max"
+  weight_init_style: "pytorch"
 
-# stem network for different modalities
+# Modality-specific encoder configurations
 hyperparameter:
-  modalities: ['image', 'eeg', 'meg', 'fmri'] # 'language'
-  modality_embed_dim: ${network.embed_dim}
-  normalize_state: ${dataset.normalize_state} # normalize state vectors
-  state_embedding_dim: 1 # dimension of positional encoding for state
-  cross_attention: True # whether to use cross attention or not
-  precompute_feat: True # whether to use precomputed features. if not, will finetune.
-  image_encoder: ${dataset.image_encoder} # what image encoder to use
-  crossattn_dim_head: 64 # for cross attention modules
-  crossattn_heads: 8 # number of heads in cross attention
-  crossattn_modality_dropout: 0.1 # the dropout ratio for cross attention
-  num_blocks: 1 # number of blocks for stem transformer's cross and self attention
-  observation_horizon: ${dataset.observation_horizon} # observation horizon
-  masked_autoencoding: False # random mask encoding and then reconstruction
-  random_horizon_masking: True # whether to randomize observation input length
-  add_pos_embedding_to_state: False # positional embedding for the state
+  modalities: ['eeg', 'meg', 'fmri']  # active modalities for training
+  modality_embed_dim: 1024
+  cross_attention: True
+  crossattn_dim_head: 64
+  crossattn_heads: 8
+  crossattn_modality_dropout: 0.1
+  num_blocks: 1
 
-  # standardize token sizes for each modality
+  # Token sizes for each modality
   crossattn_latent:
     image: 16
-    state: 16
-    # language: 8
     eeg: 1
     meg: 1
     fmri: 1
 
-  image:
-    _target_: hpt.models.policy_stem.MLP
-    input_dim: 512
-    output_dim: ${network.embed_dim}
-    widths:  [128]
-    num_of_copy: 1
-
+  # EEG encoder config
   eeg:
-    # _target_: model.projector.MLP
-    # input_dim: 54
-    # output_dim: ${network.embed_dim}
-    # widths:  [1024]
-    # proj_neuro:
-    #   emb_size:  40
-    #   embedding_dim: 1880
-    #   proj_dim: 1024
-    #   drop_proj: 0.5
-    _target_: model.projector.MLP
     input_dim: 63
-    output_dim: ${network.embed_dim}
-    widths:  [1024]
+    output_dim: 1024
+    hidden_dims: [1024]
     proj_neuro:
-      emb_size:  40
-      embedding_dim: 1440
-      proj_dim: 1024
-      drop_proj: 0.5    
-  meg:
-    # _target_: model.projector.MLP
-    # input_dim: 262
-    # output_dim: ${network.embed_dim}
-    # widths:  [1024]
-    # proj_neuro:
-    #   emb_size:  16
-    #   embedding_dim: 4080
-    #   proj_dim: 1024
-    #   drop_proj: 0.5
-    _target_: model.projector.MLP
-    input_dim: 222
-    output_dim: ${network.embed_dim}
-    widths:  [1024]
-    proj_neuro:
-      emb_size:  40
+      emb_size: 40
       embedding_dim: 1440
       proj_dim: 1024
       drop_proj: 0.5
-  fmri:
-    _target_: model.projector.MLP
-    input_dim: 8
-    output_dim: ${network.embed_dim}
-    widths:  [1024]
+
+  # MEG encoder config
+  meg:
+    input_dim: 222
+    output_dim: 1024
+    hidden_dims: [1024]
     proj_neuro:
-      emb_size:  1280
+      emb_size: 40
+      embedding_dim: 1440
+      proj_dim: 1024
+      drop_proj: 0.5
+
+  # fMRI encoder config
+  fmri:
+    input_dim: 8
+    output_dim: 1024
+    hidden_dims: [1024]
+    proj_neuro:
+      emb_size: 1280
       embedding_dim: 1280
       proj_dim: 1024
       drop_proj: 0.5
-  # each item is a token
-  state:
-    _target_: hpt.models.policy_stem.MLP
-    input_dim: ${stem.state_embedding_dim} # ovewrite based on the dataset
-    output_dim: ${network.embed_dim}
-    widths: [128]
 
-# head network
-head:
-    _target_: hpt.models.policy_head.MLP
-    input_dim: ${network.embed_dim}
-    tanh_end: True # normalized action output
-    output_dim: -1 # overwrite based on dataset
-    widths: [256, 128]
-    normalize_action: ${head.tanh_end}
-    dropout: True
-
-# self-explanatory torch config
+# -----------------------------------------------------------------------------
+# DataLoader Configuration
+# -----------------------------------------------------------------------------
 dataloader:
   batch_size: 256
-  num_workers: 1
+  num_workers: 4
   pin_memory: True
   persistent_workers: True
   shuffle: True
@@ -181,36 +130,40 @@ dataloader:
 
 val_dataloader:
   batch_size: 256
-  num_workers: 1
+  num_workers: 4
   shuffle: False
   pin_memory: True
   persistent_workers: True
   drop_last: False
 
+# -----------------------------------------------------------------------------
+# Optimizer Configuration
+# -----------------------------------------------------------------------------
 optimizer:
-  _target_: torch.optim.AdamW
-  lr: 1.0e-5 # 1e-4
+  name: "AdamW"
+  lr: 1.0e-5
   eps: 1.0e-7
   weight_decay: 1e-4
 
-optimizer_misc:
-  nontrunk_lr_scale: 1.
-
-warmup_lr:
+warmup:
+  enabled: True
   lr: 1e-10
-  step: 1000 # first 1000 iterations
+  steps: 1000
 
 lr_scheduler:
-  _target_: torch.optim.lr_scheduler.CosineAnnealingLR
-  T_max: ${train.total_epochs}
+  name: "CosineAnnealingLR"
+  T_max: 500  # should match train.total_epochs
   eta_min: 1e-6
 
-# training config
+# -----------------------------------------------------------------------------
+# Training Configuration
+# -----------------------------------------------------------------------------
 train:
-  total_epochs: 500  # maximum training epochs before termination. usually set as maximum
-  total_iters: 20000 # maximum training steps before termination
-  epoch_iters: 1000  # training steps in each epoch
-  validation_iters: 100 # maximum iterations for validation
-  pretrained_dir: "" # pretrained model path for testing
-  freeze_trunk: True # whether to freeze the trunk during finetuning
-  wandb_pretrained_dir: "" # use models pretrained on wandb
+  total_epochs: 500
+  total_iters: 20000
+  epoch_iters: 1000
+  validation_iters: 100
+  grad_clip: 1.0
+  accum_iter: 1
+  mixed_precision: True  # use AMP for faster training
+  pretrained_dir: ""  # path to pretrained model for fine-tuning

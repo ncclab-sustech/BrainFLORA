@@ -799,11 +799,11 @@ def main():
         nargs='+',
         required=False,
         default=[
-            'eeg=/mnt/dataset1/ldy/Workspace/EEG_Image_decode/Retrieval/models/contrast/across/ATMS/01-06_01-46/150.pth',
-            'meg=/mnt/dataset1/ldy/Workspace/EEG_Image_decode/Retrieval/models/contrast/across/ATMS/01-11_14-50/150.pth',
-            'fmri=/mnt/dataset0/ldy/Workspace/EEG_Image_decode/Retrieval/models/contrast/across/ATMS/01-18_01-35/50.pth'
+            'eeg=./checkpoints/eeg_encoder.pth',
+            'meg=./checkpoints/meg_encoder.pth',
+            'fmri=./checkpoints/fmri_encoder.pth'
         ],
-        help='Paths to pre-trained encoders for each modality'
+        help='Paths to pre-trained encoders for each modality (modify according to your checkpoint location)'
     )
     
     # Modality selection parameters
@@ -835,22 +835,22 @@ def main():
     parser.add_argument(
         '--eeg_data_path', 
         type=str, 
-        default="/mnt/dataset0/ldy/datasets/THINGS_EEG/Preprocessed_data_250Hz", 
-        help='Path to the EEG dataset'
+        default="./data/THINGS_EEG/Preprocessed_data_250Hz", 
+        help='Path to the EEG dataset (modify according to your dataset location)'
     )
     
     parser.add_argument(
         '--meg_data_path', 
         type=str, 
-        default="/mnt/dataset0/ldy/datasets/THINGS_MEG/preprocessed_newsplit", 
-        help='Path to the MEG dataset'
+        default="./data/THINGS_MEG/preprocessed_newsplit", 
+        help='Path to the MEG dataset (modify according to your dataset location)'
     )
     
     parser.add_argument(
         '--fmri_data_path', 
         type=str, 
-        default="/mnt/dataset0/ldy/datasets/fmri_dataset/Preprocessed", 
-        help='Path to the fMRI dataset'
+        default="./data/fmri_dataset/Preprocessed", 
+        help='Path to the fMRI dataset (modify according to your dataset location)'
     )
     
     # Output and logging configuration

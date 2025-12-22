@@ -26,8 +26,10 @@ os.environ['http_proxy'] = proxy
 os.environ['https_proxy'] = proxy
 device = "cuda:5" if torch.cuda.is_available() else "cpu"
 
-# Load configuration
-cfg = OmegaConf.load("/mnt/dataset1/ldy/Workspace/FLORA/configs/config.yaml")
+# Load configuration (relative to project root)
+_current_dir = os.path.dirname(os.path.abspath(__file__))
+_project_root = os.path.dirname(_current_dir)
+cfg = OmegaConf.load(os.path.join(_project_root, "configs/config.yaml"))
 cfg = OmegaConf.structured(cfg)
 img_directory_training = cfg.fmridataset.img_directory_training
 img_directory_test = cfg.fmridataset.img_directory_test
@@ -125,10 +127,10 @@ class fMRIDataset(Dataset):
         # Determine feature filename based on settings
         if self.use_caption:
             model_type = 'ViT-L-14'
-            features_filename = f'/mnt/dataset1/ldy/Workspace/FLORA/data_preparing/fMRI_{model_type}_features_multimodal_train.pt' if self.train else f'/mnt/dataset1/ldy/Workspace/FLORA/data_preparing/fMRI_{model_type}_features_multimodal_test.pt'
+            features_filename = os.path.join(_current_dir, f'fMRI_{model_type}_features_multimodal_train.pt') if self.train else os.path.join(_current_dir, f'fMRI_{model_type}_features_multimodal_test.pt')
         else:
             model_type = 'ViT-H-14'     
-            features_filename = f'/mnt/dataset1/ldy/Workspace/FLORA/data_preparing/fMRI_{model_type}_features_train.pt' if self.train else f'/mnt/dataset1/ldy/Workspace/FLORA/data_preparing/fMRI_{model_type}_features_test.pt'
+            features_filename = os.path.join(_current_dir, f'fMRI_{model_type}_features_train.pt') if self.train else os.path.join(_current_dir, f'fMRI_{model_type}_features_test.pt')
 
         # Load or compute features
         if os.path.exists(features_filename):
@@ -335,8 +337,8 @@ class fMRIDataset(Dataset):
 
 
 if __name__ == "__main__":
-    # Example usage
-    data_path = "/mnt/dataset0/ldy/datasets/fmri_dataset/Preprosessed"
+    # Example usage (modify path according to your dataset location)
+    data_path = "./data/fmri_dataset/Preprocessed"
     train_dataset = fMRIDataset(data_path, subjects=['sub-01'], train=True, use_caption=True)    
     test_dataset = fMRIDataset(data_path, subjects=['sub-01'], train=False, use_caption=True)
     

@@ -17,27 +17,28 @@ os.environ["WANDB_API_KEY"] = "KEY"
 os.environ["WANDB_MODE"] = 'offline'
 os.environ["WANDB_SILENT"] = "true"
 
-# Set up paths
-current_dir = os.getcwd()
-project_root = os.path.abspath(os.path.join(current_dir, '..'))
-sys.path.insert(0, "/mnt/dataset1/ldy/Workspace/FLORA")
+# Set up paths (relative to this file)
+_current_dir = os.path.dirname(os.path.abspath(__file__))
+_project_root = os.path.dirname(_current_dir)
 
 # Add project root to Python path if not already present
-if project_root not in sys.path:
-    sys.path.insert(0, project_root)
+if _project_root not in sys.path:
+    sys.path.insert(0, _project_root)
+# Project uses editable install - run `pip install -e .` from project root
 
 # Device configuration
 device = 'cuda:4'
 warnings.filterwarnings("ignore")
 
-# Load test EEG features
-eeg_features_test = torch.load('/mnt/dataset1/ldy/Workspace/FLORA/eval/fMRI_features_sub_01_test.pt')
+# Load test EEG features (modify path according to your setup)
+eeg_features_test = torch.load(os.path.join(_current_dir, 'fMRI_features_sub_01_test.pt'))
 
 # Initialize and load diffusion prior model (version 1)
 diffusion_prior_v1 = DiffusionPriorUNet(cond_dim=1024, dropout=0.1)
 high_pipe_v1 = Pipe(diffusion_prior_v1, device=device)
+# Modify checkpoint path according to your setup
 high_pipe_v1.diffusion_prior.load_state_dict(
-    torch.load("/mnt/dataset0/ldy/models/contrast/across/Unified_EEG+MEG+fMRI_EEG/01-22_18-16/prior_diffusion/60.pth")
+    torch.load(os.path.join(_project_root, "checkpoints/prior_diffusion_v1.pth"))
 )
 high_pipe_v1.diffusion_prior.to(device)
 high_pipe_v1.diffusion_prior.eval()

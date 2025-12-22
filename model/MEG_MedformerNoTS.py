@@ -8,8 +8,7 @@ from einops.layers.torch import Rearrange, Reduce
 from torch import Tensor
 from loss import ClipLoss
 
-# 修改为绝对导入路径
-sys.path.append('/mnt/dataset1/ldy/Workspace/FLORA')
+# Import from installed package (use `pip install -e .` from project root)
 from model.Medformer import Medformer
 from layers.Medformer_EncDec import Encoder, EncoderLayer
 from layers.SelfAttention_Family import MedformerLayer
@@ -41,13 +40,13 @@ class Config:
 class PatchEmbedding(nn.Module):
     def __init__(self, emb_size=40):
         super().__init__()
-        # 移除时空卷积，改用线性层
+        # Remove temporal-spatial convolution, use linear layers instead
         self.linear_layers = nn.Sequential(
-            nn.Linear(250, 128),  # 先降低时间维度
-            nn.BatchNorm1d(178),  # 在channel维度上做归一化
+            nn.Linear(250, 128),  # First reduce time dimension
+            nn.BatchNorm1d(178),  # Batch normalization on channel dimension
             nn.ELU(),
             nn.Dropout(0.5),
-            nn.Linear(128, 40),   # 降到最终需要的维度
+            nn.Linear(128, 40),   # Reduce to final required dimension
             nn.BatchNorm1d(178),
             nn.ELU(),
             nn.Dropout(0.5)
@@ -56,7 +55,7 @@ class PatchEmbedding(nn.Module):
     def forward(self, x: Tensor) -> Tensor:
         # print(f"PatchEmbedding input shape: {x.shape}")  # [32, 178, 250]
         
-        # 调整维度顺序以适应线性层
+        # Adjust dimension order to fit linear layers
         x = x.transpose(1, 2)  # [32, 250, 178]
         x = x.transpose(1, 2)  # [32, 178, 250]
         
@@ -83,7 +82,7 @@ class Enc_eeg(nn.Sequential):
         )
 
 class Proj_eeg(nn.Sequential):
-    def __init__(self, embedding_dim=7120, proj_dim=1024, drop_proj=0.5):  # 修改embedding_dim=178*40=7120
+    def __init__(self, embedding_dim=7120, proj_dim=1024, drop_proj=0.5):  # Modified embedding_dim=178*40=7120
         super().__init__(
             nn.Linear(embedding_dim, proj_dim),
             ResidualAdd(nn.Sequential(
@@ -131,19 +130,19 @@ class ResidualAdd(nn.Module):
         return x
 
 
-# 测试代码
+# Test code
 if __name__ == "__main__":
-    # 创建一个随机输入张量
+    # Create a random input tensor
     batch_size = 32
     channels = 271
     time_steps = 201
     x = torch.randn(batch_size, channels, time_steps)
     subject_ids = torch.zeros(batch_size)
 
-    # 初始化模型
+    # Initialize model
     model = meg_encoder()
     
-    # 前向传播
+    # Forward pass
     output = model(x, subject_ids)
     
     print("\nFinal output size:", output.shape)

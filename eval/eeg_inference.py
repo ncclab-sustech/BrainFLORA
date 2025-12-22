@@ -13,23 +13,23 @@ MODEL_CONFIG = {
     'mode': 'joint',  # Options: 'in_subject' or 'joint'
 }
 
-# Set up project paths
-current_dir = os.getcwd()
-project_root = os.path.abspath(os.path.join(current_dir, '..'))
-if project_root not in sys.path:
-    sys.path.insert(0, project_root)
+# Set up project paths (relative to this file)
+_current_dir = os.path.dirname(os.path.abspath(__file__))
+_project_root = os.path.dirname(_current_dir)
+if _project_root not in sys.path:
+    sys.path.insert(0, _project_root)
 
-# Load data configuration
-with open('/mnt/dataset0/ldy/Workspace/FLORA/data_preparing/data_config.json', 'r') as f:
-    data_config = json.load(f)
+# Load data configuration (modify path according to your setup)
+_data_config_path = os.path.join(_project_root, 'data_preparing/data_config.json')
+if os.path.exists(_data_config_path):
+    with open(_data_config_path, 'r') as f:
+        data_config = json.load(f)
+else:
+    data_config = {}  # Fallback if config doesn't exist
 
-# Add necessary paths to system path
-sys.path.append("/mnt/dataset0/ldy/Workspace/FLORA")
-sys.path.insert(0, '/mnt/dataset0/ldy/Workspace/EEG_Image_decode_Wrong/Retrieval')
-from contrast_retrieval import (EEGNetv4_Encoder, MetaEEG, NICE, MindEyeModule, 
+# Import from installed package (use `pip install -e .` from project root)
+from Retrieval.contrast_retrieval import (EEGNetv4_Encoder, MetaEEG, NICE, MindEyeModule, 
                                MB2CW, Cogcap, NeV2L, WaveW, MindBridgeW, MedformerNoTSW)
-sys.path.insert(0, '/mnt/dataset0/ldy/Workspace/EEG_Image_decode/Retrieval')
-sys.path.insert(0, '/mnt/dataset0/ldy/Workspace/EEG_Image_decode/Retrieval/model')
 
 # Import dataset and loss function
 from data_preparing.eegdatasets import EEGDataset
@@ -160,7 +160,7 @@ test_subjects = ['sub-01', 'sub-02', 'sub-03', 'sub-04', 'sub-05',
                 'sub-06', 'sub-07', 'sub-08', 'sub-09', 'sub-10']
 device_preference = 'cuda:3'
 device_type = 'gpu'
-data_path = "/mnt/dataset0/ldy/datasets/THINGS_EEG/Preprocessed_data_250Hz"
+data_path = "./data/THINGS_EEG/Preprocessed_data_250Hz"  # Modify according to your dataset location
 device = torch.device(device_preference if device_type == 'gpu' and torch.cuda.is_available() else 'cpu')
 print(f"Using device: {device}")
 # =============================================================================
@@ -191,7 +191,7 @@ for sub in test_subjects:
     ModelClass = get_model_class(MODEL_CONFIG['model_name'])
     eeg_model = ModelClass()
     
-    base_path = f"/mnt/dataset1/ldy/Workspace/FLORA/models/{MODEL_CONFIG['model_name']}"
+    base_path = os.path.join(_project_root, f"models/{MODEL_CONFIG['model_name']}")
     if mode == 'joint':
         across_dir = os.path.join(base_path, 'across', 'EEG')
         time_folder = os.listdir(across_dir)[0]

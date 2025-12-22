@@ -5,8 +5,7 @@ import math
 import random
 import argparse
 import datetime
-from itertools import combinations
-from typing import Tensor
+from itertools import combinations, chain
 
 import numpy as np
 import matplotlib.pyplot as plt
@@ -589,8 +588,8 @@ def main_train_loop(sub, current_time, eeg_model, train_dataloader, test_dataloa
 def main():
     """Main function to parse arguments and run training"""
     parser = argparse.ArgumentParser(description='EEG Model Training Script')
-    parser.add_argument('--data_path', type=str, default='/mnt/dataset0/ldy/datasets/THINGS_EEG/Preprocessed_data_250Hz', 
-                       help='Path to EEG data')
+    parser.add_argument('--data_path', type=str, default='./data/THINGS_EEG/Preprocessed_data_250Hz', 
+                       help='Path to EEG data (modify according to your dataset location)')
     parser.add_argument('--output_dir', type=str, default='./outputs/contrast', 
                        help='Directory to save output results')
     parser.add_argument('--project', type=str, default='train_pos_img_text_rep', 
@@ -635,7 +634,7 @@ def main():
     # Initialize model
     eeg_model = globals()[args.encoder_type](joint_train=True, configs=args)
     eeg_model.to(device)
-    optimizer = torch.optim.AdamW(itertools.chain(eeg_model.parameters()), lr=args.lr)
+    optimizer = torch.optim.AdamW(chain(eeg_model.parameters()), lr=args.lr)
     
     # Prepare datasets
     train_dataset = EEGDataset(args.data_path, adap_subject=args.sub, subjects=args.subjects, train=True)

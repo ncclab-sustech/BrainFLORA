@@ -543,7 +543,7 @@ if __name__ == "__main__":
     # feature_extractor = CLIPImageProcessor()
 
     # from diffusers.utils import load_image
-    # image_prompt = load_image("/mnt/dataset0/weichen/projects/visobj/proposals/mise/data/things-images/THINGSplus/images/images_resized/apple.jpg")
+    # image_prompt = load_image("./data/sample_images/apple.jpg")
     # display(image_prompt)
 
     # # encode image
@@ -590,7 +590,8 @@ if __name__ == "__main__":
         'ViT-H-14', pretrained='laion2b_s32b_b79k', precision='fp16', device='cuda')
 
     from diffusers.utils import load_image
-    image_prompt = load_image("/mnt/dataset0/weichen/projects/visobj/proposals/mise/data/things-images/THINGSplus/images/images_resized/apple.jpg")
+    # Example test image - modify path or use URL
+    image_prompt = load_image("https://upload.wikimedia.org/wikipedia/commons/1/15/Red_Apple.jpg")
     # image_prompt = load_image("https://th.bing.com/th/id/OIP.BGo1V-YM46ZrqSo5N_edWAHaE7?rs=1&pid=ImgDetMain")
 
     display(image_prompt)

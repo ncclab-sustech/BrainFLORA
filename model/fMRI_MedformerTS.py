@@ -8,8 +8,7 @@ from einops.layers.torch import Rearrange, Reduce
 from torch import Tensor
 from loss import ClipLoss
 
-# 修改为绝对导入路径
-sys.path.append('/mnt/dataset1/ldy/Workspace/FLORA')
+# Import from installed package (use `pip install -e .` from project root)
 from model.Medformer import Medformer
 from layers.Medformer_EncDec import Encoder, EncoderLayer
 from layers.SelfAttention_Family import MedformerLayer
@@ -134,14 +133,14 @@ class fmri_encoder(nn.Module):
         return out  
     
 if __name__ == "__main__":
-    # 创建一个随机输入张量
+    # Create a random input tensor
     batch_size = 32
     x = torch.randn(batch_size, 7000)
     subject_ids = torch.zeros(batch_size)
 
-    # 初始化模型
+    # Initialize model
     model = fmri_encoder()
     
-    # 前向传播
+    # Forward pass
     output = model(x, subject_ids)
     print(output.shape)

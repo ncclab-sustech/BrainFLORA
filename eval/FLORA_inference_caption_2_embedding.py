@@ -31,12 +31,12 @@ os.environ["WANDB_SILENT"] = "true"
 warnings.filterwarnings("ignore")  # Ignore warnings
 wandb.init(mode="disabled")  # Disable wandb
 
-# Set up project paths
-current_dir = os.getcwd()
-project_root = os.path.abspath(os.path.join(current_dir, '..'))
-if project_root not in sys.path:
-    sys.path.insert(0, project_root)
-sys.path.insert(0, "/mnt/dataset1/ldy/Workspace/FLORA")
+# Set up project paths (relative to this file)
+_current_dir = os.path.dirname(os.path.abspath(__file__))
+_project_root = os.path.dirname(_current_dir)
+if _project_root not in sys.path:
+    sys.path.insert(0, _project_root)
+# Project uses editable install - run `pip install -e .` from project root
 
 def extract_id_from_string(s):
     """Extract numerical ID from string using regex.
@@ -144,10 +144,11 @@ def get_eegfeatures(unified_model, dataloader, device, text_features_all, img_fe
 def main():
     """Main execution function for model evaluation."""
     # Configuration parameters
+    # Modify checkpoint paths according to your setup
     encoder_paths_list = [
-        'eeg=/mnt/dataset1/ldy/Workspace/EEG_Image_decode/Retrieval/models/contrast/across/ATMS/01-06_01-46/150.pth',
-        'meg=/mnt/dataset1/ldy/Workspace/EEG_Image_decode/Retrieval/models/contrast/across/ATMS/01-11_14-50/150.pth',
-        'fmri=/mnt/dataset0/ldy/Workspace/EEG_Image_decode/Retrieval/models/contrast/across/ATMS/01-18_01-35/50.pth'
+        'eeg=./checkpoints/eeg_encoder.pth',
+        'meg=./checkpoints/meg_encoder.pth',
+        'fmri=./checkpoints/fmri_encoder.pth'
     ]
     
     # Evaluation configuration
@@ -159,10 +160,10 @@ def main():
     modalities = ['eeg', 'meg', 'fmri']
     test_classes = 100
     
-    # Dataset paths
-    eeg_data_path = "/mnt/dataset0/ldy/datasets/THINGS_EEG/Preprocessed_data_250Hz"
-    meg_data_path = "/mnt/dataset0/ldy/datasets/THINGS_MEG/preprocessed_newsplit"
-    fmri_data_path = "/mnt/dataset0/ldy/datasets/fmri_dataset/Preprocessed"
+    # Dataset paths (modify according to your dataset location)
+    eeg_data_path = "./data/THINGS_EEG/Preprocessed_data_250Hz"
+    meg_data_path = "./data/THINGS_MEG/preprocessed_newsplit"
+    fmri_data_path = "./data/fmri_dataset/Preprocessed"
     
     # Device configuration
     device_preference = 'cuda:4'
@@ -178,7 +179,8 @@ def main():
     
     # Initialize model
     unified_model = UnifiedEncoder(encoder_paths, device, user_caption=True)
-    unified_model.load_state_dict(torch.load("/mnt/dataset1/ldy/Workspace/FLORA/models/contrast/across/Unified_EEG+MEG+fMRI_EEG/01-29_14-48/90.pth"))
+    # Modify model checkpoint path according to your setup
+    unified_model.load_state_dict(torch.load(os.path.join(_project_root, "checkpoints/unified_encoder_caption.pth")))
     unified_model.to(device)
     unified_model.eval()
     
@@ -273,7 +275,7 @@ def main():
     
     # Save features
     eeg_features_test.shape
-    torch.save(eeg_features_test, '/mnt/dataset1/ldy/Workspace/FLORA/eval/fMRI_features_sub_03_test.pt')
+    torch.save(eeg_features_test, os.path.join(_current_dir, 'fMRI_features_sub_03_test.pt'))
 
 if __name__ == "__main__":
     main()

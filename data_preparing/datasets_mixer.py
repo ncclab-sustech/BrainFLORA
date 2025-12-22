@@ -388,10 +388,11 @@ class MetaDataLoader:
 
 
 if __name__ == '__main__':
-    # Example usage
-    eeg_data_path = "/home/ldy/4090_Workspace/4090_THINGS/Preprocessed_data_250Hz"
-    meg_data_path = "/home/ldy/THINGS-MEG/preprocessed_newsplit"
-    fmri_data_path = "/home/ldy/fmri_dataset/Preprocessed"
+    # Example usage - MODIFY THESE PATHS ACCORDING TO YOUR SETUP
+    DATA_ROOT = "./data"
+    eeg_data_path = f"{DATA_ROOT}/THINGS_EEG/Preprocessed_data_250Hz"
+    meg_data_path = f"{DATA_ROOT}/THINGS_MEG/preprocessed_newsplit"
+    fmri_data_path = f"{DATA_ROOT}/fmri_dataset/Preprocessed"
     eeg_subjects = ['sub-01']
     meg_subjects = ['sub-01']
     fmri_subjects = ['sub-01']

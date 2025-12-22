@@ -15,13 +15,15 @@ import pandas as pd
 from collections import defaultdict
 
 # -------------------------- Hyperparameters --------------------------
-CSV_CONCEPT_PATH = "/mnt/dataset0/ldy/4090_Workspace/4090_THINGS/osfstorage/THINGS/Metadata/Concept-specific/image_concept_index.csv"
-CSV_IMAGE_PATH = "/mnt/dataset0/ldy/4090_Workspace/4090_THINGS/osfstorage/THINGS/Metadata/Image-specific/image_paths.csv"
+# Modify these paths according to your dataset location
+CSV_CONCEPT_PATH = "./data/THINGS/Metadata/Concept-specific/image_concept_index.csv"
+CSV_IMAGE_PATH = "./data/THINGS/Metadata/Image-specific/image_paths.csv"
 
-BASE_FIF_DIR = "/mnt/dataset0/ldy/datasets/meg_dataset/original_preprocessed/preprocessed"
-SOURCE_IMAGE_DIR = "/mnt/dataset0/ldy/4090_Workspace/4090_THINGS/osfstorage/THINGS/Images/"
-MEG_IMAGE_DIR = "/mnt/dataset0/ldy/datasets/THINGS_MEG/images_set"
-OUTPUT_DIR = "/home/ldy/THINGS-MEG/preprocessed_newsplit"
+BASE_FIF_DIR = "./data/meg_dataset/original_preprocessed/preprocessed"
+SOURCE_IMAGE_DIR = "./data/THINGS/Images/"
+MEG_IMAGE_DIR = "./data/THINGS_MEG/images_set"
+# Output directory - MODIFY PATH ACCORDING TO YOUR SETUP
+OUTPUT_DIR = "./data/THINGS_MEG/preprocessed_newsplit"
 
 CATEGORY_LIMIT = 12
 SUBJECTS = [

@@ -26,12 +26,12 @@ proxy = 'http://10.20.37.38:7890'
 os.environ['http_proxy'] = proxy
 os.environ['https_proxy'] = proxy
 
-# Set up paths
-current_dir = os.getcwd()
-project_root = os.path.abspath(os.path.join(current_dir, '..'))
-if project_root not in sys.path:
-    sys.path.insert(0, project_root)
-sys.path.insert(0, "/mnt/dataset1/ldy/Workspace/FLORA/")
+# Set up paths (relative to this file)
+_current_dir = os.path.dirname(os.path.abspath(__file__))
+_project_root = os.path.dirname(_current_dir)
+if _project_root not in sys.path:
+    sys.path.insert(0, _project_root)
+# Project uses editable install - run `pip install -e .` from project root
 
 # Import custom modules
 from model.unified_encoder_multi_tower import UnifiedEncoder
@@ -183,7 +183,7 @@ def get_priorfeatures(sub, unified_model, dataloader, device, text_features_all,
     generator = Generator4Embeds(num_inference_steps=4, device=device)
     gen = torch.Generator(device=device)
     gen.manual_seed(seed_value)
-    folder = f'/mnt/dataset1/ldy/Workspace/FLORA/eval/{eval_modality}_generated_imgs'
+    folder = os.path.join(_current_dir, f'{eval_modality}_generated_imgs')
     os.makedirs(folder, exist_ok=True)
     
     with torch.no_grad():
@@ -227,10 +227,11 @@ def get_priorfeatures(sub, unified_model, dataloader, device, text_features_all,
 # Main configuration section
 if __name__ == "__main__":
     # Define Parameters
+    # Modify checkpoint paths according to your setup
     encoder_paths_list = [
-        'eeg=/mnt/dataset1/ldy/Workspace/EEG_Image_decode/Retrieval/models/contrast/across/ATMS/01-06_01-46/150.pth',
-        'meg=/mnt/dataset1/ldy/Workspace/EEG_Image_decode/Retrieval/models/contrast/across/ATMS/01-11_14-50/150.pth',
-        'fmri=/mnt/dataset0/ldy/Workspace/EEG_Image_decode/Retrieval/models/contrast/across/ATMS/01-18_01-35/50.pth'
+        'eeg=./checkpoints/eeg_encoder.pth',
+        'meg=./checkpoints/meg_encoder.pth',
+        'fmri=./checkpoints/fmri_encoder.pth'
     ]
     
     # Evaluation configuration
@@ -239,10 +240,10 @@ if __name__ == "__main__":
     modalities = ['eeg', 'meg', 'fmri']
     test_classes = 100
     
-    # Dataset paths
-    eeg_data_path = "/mnt/dataset0/ldy/datasets/THINGS_EEG/Preprocessed_data_250Hz"
-    meg_data_path = "/mnt/dataset0/ldy/datasets/THINGS_MEG/preprocessed_newsplit"
-    fmri_data_path = "/mnt/dataset0/ldy/datasets/fmri_dataset/Preprocessed"
+    # Dataset paths (modify according to your dataset location)
+    eeg_data_path = "./data/THINGS_EEG/Preprocessed_data_250Hz"
+    meg_data_path = "./data/THINGS_MEG/preprocessed_newsplit"
+    fmri_data_path = "./data/fmri_dataset/Preprocessed"
     
     # Device configuration
     device_preference = 'cuda:5'
@@ -262,14 +263,16 @@ if __name__ == "__main__":
     
     # Initialize the Unified Encoder Model
     unified_model = UnifiedEncoder(encoder_paths, device, user_caption=False)
-    unified_model.load_state_dict(torch.load("/mnt/dataset1/ldy/Workspace/FLORA/models/contrast/across/Unified_EEG+MEG+fMRI_EEG/01-29_01-18/300.pth"))
+    # Modify model checkpoint path according to your setup
+    unified_model.load_state_dict(torch.load(os.path.join(_project_root, "checkpoints/unified_encoder.pth")))
     unified_model.to(device)
     unified_model.eval()
     
     # Initialize diffusion prior model
     diffusion_prior = DiffusionPriorUNet(cond_dim=1024, dropout=0.1)
     high_pipe = Pipe(diffusion_prior, device=device)
-    high_pipe.diffusion_prior.load_state_dict(torch.load("/mnt/dataset1/ldy/Workspace/FLORA/models/contrast/across/Unified_EEG+MEG+fMRI_EEG/01-29_01-18/prior_diffusion/300.pth"))
+    # Modify diffusion prior checkpoint path according to your setup
+    high_pipe.diffusion_prior.load_state_dict(torch.load(os.path.join(_project_root, "checkpoints/prior_diffusion.pth")))
     high_pipe.diffusion_prior.to(device)
     high_pipe.diffusion_prior.eval()
     

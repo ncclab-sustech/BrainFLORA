@@ -25,7 +25,10 @@ vlmodel, preprocess_train, feature_extractor = open_clip.create_model_and_transf
 )
 
 # Load configuration from YAML file
-cfg = OmegaConf.load(os.path.join("/mnt/dataset1/ldy/Workspace/FLORA/configs/config.yaml"))
+# Get project root directory (parent of Retrieval/)
+_current_dir = os.path.dirname(os.path.abspath(__file__))
+_project_root = os.path.dirname(_current_dir)
+cfg = OmegaConf.load(os.path.join(_project_root, "configs/config.yaml"))
 cfg = OmegaConf.structured(cfg)
 
 # Get image directories from config
@@ -273,7 +276,7 @@ class EEGDataset():
         Returns:
             Normalized text features
         """
-        text_inputs = torch.cat([clip.tokenize(t) for t in text]).to(device)
+        text_inputs = torch.cat([open_clip.tokenize(t) for t in text]).to(device)
         with torch.no_grad():
             text_features = vlmodel.encode_text(text_inputs)
         text_features = F.normalize(text_features, dim=-1).detach()
@@ -364,7 +367,8 @@ class EEGDataset():
 
 if __name__ == "__main__":
     # Example usage
-    data_path = "/home/ldy/Workspace/THINGS/EEG/osfstorage-archive"
+    # Example usage - MODIFY PATH ACCORDING TO YOUR SETUP
+    data_path = "./data/THINGS_EEG/osfstorage-archive"
     
     # Create datasets
     train_dataset = EEGDataset(data_path, subjects=['sub-01'], train=True)    

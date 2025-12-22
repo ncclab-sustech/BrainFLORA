@@ -22,15 +22,17 @@ from transformers import CLIPVisionModel
 from subject_layers.Transformer_EncDec import Encoder, EncoderLayer
 from subject_layers.SelfAttention_Family import FullAttention, AttentionLayer
 from subject_layers.Embed import DataEmbedding
-from model.loss import ClipLoss
+from loss import ClipLoss
 from .components import RMSNorm
 from .perceiver import PerceiverResampler
 from .ATMS import ATMS
 from .Medformer import Medformer
 from .projector import FusionHead
 
-# Load configuration
-cfg = OmegaConf.load(os.path.join("/mnt/dataset0/ldy/Workspace/FLORA/configs/config.yaml"))
+# Load configuration (relative to project root)
+_current_dir = os.path.dirname(os.path.abspath(__file__))
+_project_root = os.path.dirname(_current_dir)
+cfg = OmegaConf.load(os.path.join(_project_root, "configs/config.yaml"))
 cfg = OmegaConf.structured(cfg)
 
 # Initialize linear layers with Xavier uniform initialization

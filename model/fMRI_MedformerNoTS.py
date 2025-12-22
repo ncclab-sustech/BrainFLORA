@@ -8,8 +8,7 @@ from einops.layers.torch import Rearrange, Reduce
 from torch import Tensor
 from loss import ClipLoss
 
-# 修改为绝对导入路径
-sys.path.append('/mnt/dataset1/ldy/Workspace/FLORA')
+# Import from installed package (use `pip install -e .` from project root)
 from model.Medformer import Medformer
 from layers.Medformer_EncDec import Encoder, EncoderLayer
 from layers.SelfAttention_Family import MedformerLayer
@@ -20,13 +19,13 @@ class PatchEmbedding(nn.Module):
     def __init__(self, emb_size=40):
         super().__init__()
         
-        # 计算展平后的维度
-        flat_dim = 899 * 250  # 原始输入展平后的维度
+        # Calculate flattened dimension
+        flat_dim = 899 * 250  # Flattened dimension of original input
         
-        # 使用线性层替代卷积
+        # Use linear layers instead of convolution
         self.linear_layers = nn.Sequential(
-            Rearrange('b c h w -> b (c h w)'),  # 展平输入
-            nn.Linear(flat_dim, 1440),  # 1440 = 40 * 36 (与原输出维度匹配)
+            Rearrange('b c h w -> b (c h w)'),  # Flatten input
+            nn.Linear(flat_dim, 1440),  # 1440 = 40 * 36 (match original output dimension)
             nn.BatchNorm1d(1440),
             nn.ELU(),
             nn.Dropout(0.5),
@@ -138,15 +137,15 @@ class fmri_encoder(nn.Module):
         return out  
     
 if __name__ == "__main__":
-    # 创建一个随机输入张量
+    # Create a random input tensor
     batch_size = 32
     x = torch.randn(batch_size, 7000)
     subject_ids = torch.zeros(batch_size)
 
-    # 初始化模型
+    # Initialize model
     model = fmri_encoder()
     
-    # 前向传播
+    # Forward pass
     output = model(x, subject_ids)
     
     print("\nFinal output size:", output.shape)

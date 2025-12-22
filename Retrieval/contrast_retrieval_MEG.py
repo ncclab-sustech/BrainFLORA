@@ -32,17 +32,10 @@ from megdatasets import MEGDataset
 from layers.Medformer_EncDec import Encoder, EncoderLayer
 from layers.SelfAttention_Family import MedformerLayer
 from layers.Embed import ListPatchEmbedding
-sys.path.insert(0,'/mnt/dataset0/ldy/Workspace/EEG_Image_decode/Retrieval')
-sys.path.insert(0,'/mnt/dataset0/ldy/Workspace/EEG_Image_decode/Retrieval/model')
-# from umbrae import BrainXS_thingsmeg
-# from ATMS_retrieval_in_train_MEG_rerank_medformer import ATMS
-
-# sys.path.insert(0,'/mnt/dataset0/ldy/Workspace/MindEyeV2/src')
-# from models import BrainNetwork
-
-# 添加必要的路径
-sys.path.insert(0,'/mnt/dataset0/ldy/Workspace/CognitionCapturer')
-from src.models.components.Cogcap.Cogcap import Cogcap as CogcapBase
+# External dependencies - modify paths according to your setup or install these packages
+# CognitionCapturer: external dependency
+# sys.path.insert(0, '/path/to/CognitionCapturer')
+# from src.models.components.Cogcap.Cogcap import Cogcap as CogcapBase
 
 
 
@@ -54,11 +47,11 @@ class Cogcap(nn.Module):
         self.logit_scale = nn.Parameter(torch.ones([]) * np.log(1 / 0.07))
         self.loss_func = ClipLoss()
         
-        # MEG参数调整：num_channels=271, sequence_length=201
+        # MEG parameter adjustments: num_channels=271, sequence_length=201
         self.model = CogcapBase(
             num_channels=271, 
             sequence_length=201,
-            num_subjects=4  # 根据实际主题数调整
+            num_subjects=4  # Adjust according to actual number of subjects
         )
 
     def forward(self, x):
@@ -73,9 +66,10 @@ class NeV2L(nn.Module):
         self.logit_scale = nn.Parameter(torch.ones([]) * np.log(1 / 0.07))
         self.loss_func = ClipLoss()
         
-        # MEG参数调整：输入尺寸(271, 201)
+        # MEG parameter adjustments: input size (271, 201)
         self.proj_meg = nn.Linear(271 * 201, 8192)
-        self.config = CLIPVisionConfig.from_pretrained("/mnt/dataset0/ldy/Workspace/EEG_Image_decode_Wrong/Retrieval/vitconfig.json")
+        _retrieval_dir = os.path.dirname(os.path.abspath(__file__))
+        self.config = CLIPVisionConfig.from_pretrained(os.path.join(_retrieval_dir, "vitconfig.json"))
         self.config.image_size = (32, 16, 16)
         self.config.num_channels = 1
         self.config.patch_size = 8
@@ -85,7 +79,7 @@ class NeV2L(nn.Module):
         batch_size = x.size(0)
         x = x.reshape(batch_size, -1)
         x = self.proj_meg(x)
-        x = x.reshape(x.size(0), 1, 32, 16, 16)  # 3D卷积输入调整
+        x = x.reshape(x.size(0), 1, 32, 16, 16)  # 3D convolution input adjustment
         x = self.model(x, output_hidden_states=True)
         meg_features = x.last_hidden_state.mean(dim=1)
         return meg_features
@@ -757,7 +751,7 @@ def main_train_loop(sub, encoder_type, current_time, model, train_dataloader, te
 
 def main():
     parser = argparse.ArgumentParser(description='Train MEG-Image/Text Model')
-    parser.add_argument('--data_path', type=str, default="/mnt/dataset0/ldy/datasets/THINGS_MEG")
+    parser.add_argument('--data_path', type=str, default="./data/THINGS_MEG", help="Path to data (modify according to your dataset location)")
     parser.add_argument('--project', type=str, default="train_pos_img_text_rep")
     parser.add_argument('--entity', type=str, default="sustech_rethinkingbci")
     parser.add_argument('--name', type=str, default="lr=3e-4_img_pos_pro_meg")
@@ -769,7 +763,7 @@ def main():
     parser.add_argument('--test_subjects', nargs='+', default=['sub-01'])
     parser.add_argument('--encoder_type', type=str, default='Cogcap')
     parser.add_argument('--device', type=str, default='cuda:1')
-    parser.add_argument('--save_root', type=str, default="/mnt/dataset1/ldy/Workspace/FLORA/models", help='Root path for saving models')
+    parser.add_argument('--save_root', type=str, default="./models", help='Root path for saving models')
     
     args = parser.parse_args()
     config = vars(args)

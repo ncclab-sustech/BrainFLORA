@@ -25,8 +25,10 @@ vlmodel, preprocess_train, feature_extractor = open_clip.create_model_and_transf
     device=device
 )
 
-# Load configuration
-cfg = OmegaConf.load("/mnt/dataset1/ldy/Workspace/FLORA/configs/config.yaml")
+# Load configuration (relative to project root)
+_current_dir = os.path.dirname(os.path.abspath(__file__))
+_project_root = os.path.dirname(_current_dir)
+cfg = OmegaConf.load(os.path.join(_project_root, "configs/config.yaml"))
 cfg = OmegaConf.structured(cfg)
 img_directory_training = cfg.megdataset.img_directory_training
 img_directory_test = cfg.megdataset.img_directory_test
@@ -66,10 +68,11 @@ class MEGDataset():
         
         # Load or compute text and image features
         if self.classes is None and self.pictures is None:
+            # Features file path (relative to project root)
             features_filename = os.path.join(
-                f'/mnt/dataset1/ldy/Workspace/FLORA/data_preparing/newsplit_MEG_ViT-H-14_features_train.pt'
+                _project_root, 'data_preparing/newsplit_MEG_ViT-H-14_features_train.pt'
             ) if self.train else os.path.join(
-                f'/mnt/dataset1/ldy/Workspace/FLORA/data_preparing/newsplit_MEG_ViT-H-14_features_test.pt'
+                _project_root, 'data_preparing/newsplit_MEG_ViT-H-14_features_test.pt'
             )
             
             if os.path.exists(features_filename):
@@ -299,7 +302,8 @@ class MEGDataset():
 
 if __name__ == "__main__":
     # Example usage
-    data_path = "/home/ldy/THINGS-MEG/preprocessed_newsplit"
+    # Example usage - MODIFY PATH ACCORDING TO YOUR SETUP
+    data_path = "./data/THINGS_MEG/preprocessed_newsplit"
     train_dataset = MEGDataset(data_path, subjects=['sub-01', 'sub-02'], train=True)    
     test_dataset = MEGDataset(data_path, subjects=['sub-01'], train=False)
     

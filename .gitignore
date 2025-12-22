@@ -1,1 +1,130 @@
-./.history
+# Python编译文件和缓存
+*.py[cod]
+*$py.class
+__pycache__/
+*.so
+*.egg
+*.egg-info/
+dist/
+build/
+.eggs/
+*.whl
+pip-wheel-metadata/
+
+# 虚拟环境
+venv/
+env/
+ENV/
+.venv/
+.conda/
+
+# IDE和编辑器
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+.history/
+
+# Jupyter Notebook
+.ipynb_checkpoints/
+*.ipynb_checkpoints
+
+# 测试和覆盖率
+.pytest_cache/
+.coverage
+.coverage.*
+htmlcov/
+.tox/
+.nox/
+coverage.xml
+*.cover
+
+# 数据文件（通常很大，不应提交）
+data/
+datasets/
+*.h5
+*.hdf5
+*.npy
+*.npz
+*.pkl
+*.pickle
+*.pt
+*.pth
+*.ckpt
+*.safetensors
+
+# 模型权重和检查点
+checkpoints/
+checkpoint/
+weights/
+models/*.pth
+models/*.pt
+models/*.ckpt
+*.model
+saved_models/
+results/
+outputs/
+output/
+
+# 日志文件
+logs/
+*.log
+*.out
+*.err
+wandb/
+runs/
+tensorboard/
+lightning_logs/
+
+# 临时文件
+tmp/
+temp/
+.tmp/
+*.tmp
+*.bak
+*.backup
+
+# 系统文件
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# 环境变量和配置
+.env
+.env.local
+.env.*.local
+*.secret
+secrets.yml
+credentials.json
+
+# 文档构建
+docs/_build/
+docs/.doctrees/
+site/
+
+# 压缩文件（根据需要调整）
+*.zip
+*.tar.gz
+*.tar
+*.rar
+*.7z
+
+# 图像缓存（如果有大量生成的图像）
+# 根据项目需要取消注释
+# *.png
+# *.jpg
+# *.jpeg
+# images/generated/
+
+# 特定于科研项目
+experiments/
+exp/
+*.mat  # MATLAB文件，如果不需要
+*.nii  # 脑成像文件，通常很大
+*.nii.gz
+*.edf  # EEG数据文件
+
+# 如果使用Git LFS管理大文件，可保留这些扩展名
+# 并在 .gitattributes 中配置

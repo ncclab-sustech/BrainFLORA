@@ -7,28 +7,16 @@ import torch
 from torch.utils.data import DataLoader
 import importlib.util
 
-# Set up project root directory (assuming Notebook is in parent_dir)
-current_dir = os.getcwd()
-project_root = os.path.abspath(os.path.join(current_dir, '..'))
+# Set up project paths (relative to this file)
+_current_dir = os.path.dirname(os.path.abspath(__file__))
+_project_root = os.path.dirname(_current_dir)
 
 # Add project root to sys.path if not already present
-if project_root not in sys.path:
-    sys.path.insert(0, project_root)
+if _project_root not in sys.path:
+    sys.path.insert(0, _project_root)
 
-# Import fMRI dataset module
-spec = importlib.util.spec_from_file_location(
-    "fmri_datasets",
-    "/mnt/dataset1/ldy/Workspace/FLORA/data_preparing/fmri_datasets.py"
-)
-dataset_module = importlib.util.module_from_spec(spec)
-spec.loader.exec_module(dataset_module)
-fMRIDataset = dataset_module.fMRIDataset
-
-# Add additional paths for model imports
-sys.path.insert(0, '/mnt/dataset0/ldy/Workspace/EEG_Image_decode_Wrong/Retrieval')
-sys.path.insert(0, '/mnt/dataset0/ldy/Workspace/EEG_Image_decode/Retrieval')
-sys.path.insert(0, '/mnt/dataset0/ldy/Workspace/EEG_Image_decode/Retrieval/model')
-sys.path.append("/mnt/dataset0/ldy/Workspace/FLORA")
+# Import fMRI dataset module (use editable install: `pip install -e .` from project root)
+from data_preparing.fmri_datasets_joint_subjects import fMRIDataset
 
 # Configuration dictionary for model settings
 MODEL_CONFIG = {
@@ -37,7 +25,7 @@ MODEL_CONFIG = {
 }
 
 # Import model class based on configuration
-base_path = "/mnt/dataset0/ldy/Workspace/EEG_Image_decode_Wrong/Retrieval"
+base_path = os.path.join(_project_root, "Retrieval")
 
 def import_from_path(module_name, file_path):
     """Helper function to import a module from a specific file path."""
@@ -171,7 +159,7 @@ def get_fmrifeatures(sub, fmri_model, dataloader, device, text_features_all, img
 test_subjects = ['sub-01', 'sub-02', 'sub-03']
 device_preference = 'cuda:0'
 device_type = 'gpu'
-data_path = "/mnt/dataset0/ldy/datasets/fmri_dataset/Preprocessed"
+data_path = "./data/fmri_dataset/Preprocessed"  # Modify according to your dataset location
 device = torch.device(device_preference if device_type == 'gpu' and torch.cuda.is_available() else 'cpu')
 print(f"Using device: {device}")
 # ======================================== Configuration =============================================
@@ -205,7 +193,7 @@ for sub in test_subjects:
     print(f"\nProcessing subject: {sub}")
     # Load appropriate model based on mode
     fmri_model = ModelClass()
-    base_path = f"/mnt/dataset0/ldy/Workspace/FLORA/models/{MODEL_CONFIG['model_name']}"
+    base_path = os.path.join(_project_root, f"models/{MODEL_CONFIG['model_name']}")
     
     if mode == 'joint':
         across_dir = os.path.join(base_path, 'across', 'fMRI')

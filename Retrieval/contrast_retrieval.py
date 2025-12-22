@@ -28,16 +28,16 @@ import csv
 import argparse
 from eegdatasets_joint_subjects import EEGDataset
 import math
-sys.path.insert(0,'/mnt/dataset0/ldy/Workspace/EEG_Image_decode/Retrieval/model')
-# from umbrae import BrainXS_thingseeg2
-sys.path.insert(0,'/mnt/dataset0/ldy/Workspace/MindEyeV2/src')
-from models import BrainNetwork
-sys.path.insert(0,'/mnt/dataset0/ldy/Workspace/neuro_v2l/Code/llava/model/fmri_encoder')
+# External dependencies - modify paths according to your setup or install these packages
+# MindEyeV2: https://github.com/MedARC-AI/MindEyeV2
+# CognitionCapturer: external dependency
+# sys.path.insert(0, '/path/to/MindEyeV2/src')
+# from models import BrainNetwork
 from transformers import CLIPVisionConfig
-from vit3d import CLIPVision3dModelWithProjection
-import sys
-sys.path.append('/mnt/dataset0/ldy/Workspace/CognitionCapturer')
-from src.models.components.Cogcap.Cogcap import Cogcap as CogcapBase
+# sys.path.insert(0, '/path/to/neuro_v2l/Code/llava/model/fmri_encoder')
+# from vit3d import CLIPVision3dModelWithProjection
+# sys.path.append('/path/to/CognitionCapturer')
+# from src.models.components.Cogcap.Cogcap import Cogcap as CogcapBase
 
 class Cogcap(nn.Module):
     def __init__(self):
@@ -45,7 +45,7 @@ class Cogcap(nn.Module):
         self.logit_scale = nn.Parameter(torch.ones([]) * np.log(1 / 0.07))
         self.loss_func = ClipLoss()
         
-        # 使用 Cogcap 基础模型
+        # Using Cogcap base model
         self.model = CogcapBase(
             num_channels=63, 
             sequence_length=250,
@@ -64,7 +64,8 @@ class NeV2L(nn.Module):
         super().__init__()
         self.logit_scale = nn.Parameter(torch.ones([]) * np.log(1 / 0.07))
         self.loss_func = ClipLoss()
-        self.config = CLIPVisionConfig.from_pretrained("/mnt/dataset0/ldy/Workspace/EEG_Image_decode_Wrong/Retrieval/vitconfig.json")
+        _retrieval_dir = os.path.dirname(os.path.abspath(__file__))
+        self.config = CLIPVisionConfig.from_pretrained(os.path.join(_retrieval_dir, "vitconfig.json"))
         self.config.image_size = (32, 16, 16) 
         self.config.num_channels = 1
         self.config.patch_size = 8
@@ -75,9 +76,9 @@ class NeV2L(nn.Module):
     def forward(self, x):
         batch_size = x.size(0)
         # Reshape input: (batch_size, channels, time) -> (batch_size, channels*time)
-        x = x.reshape(batch_size, -1)  # 将变成 (batch_size, 63*250)
-        x = self.proj_eeg(x)          # 投影到 (batch_size, 8192)
-        x = x.reshape(x.size(0), -1, 16, 16)  # 重塑为需要的形状
+        x = x.reshape(batch_size, -1)  # Becomes (batch_size, 63*250)
+        x = self.proj_eeg(x)          # Project to (batch_size, 8192)
+        x = x.reshape(x.size(0), -1, 16, 16)  # Reshape to required shape
         x = self.model(x, output_hidden_states=True)
         eeg_features = x.last_hidden_state
         eeg_features = eeg_features.mean(dim=1)
@@ -89,7 +90,8 @@ class MindEyeModule(nn.Module):
         super(MindEyeModule, self).__init__()
         self.logit_scale = nn.Parameter(torch.ones([]) * np.log(1 / 0.07))
         self.loss_func = ClipLoss()
-        self.config = CLIPVisionConfig.from_pretrained("/mnt/dataset0/ldy/Workspace/EEG_Image_decode_Wrong/Retrieval/vitconfig.json")
+        _retrieval_dir = os.path.dirname(os.path.abspath(__file__))
+        self.config = CLIPVisionConfig.from_pretrained(os.path.join(_retrieval_dir, "vitconfig.json"))
         self.proj_eeg = nn.Linear(250*63, 4096) # Equivalent to the original
         self.BrainNetwork = BrainNetwork(h=4096, in_dim=1024, seq_len=1, n_blocks=4,
                           clip_size=1024, out_dim=1024, 
@@ -700,7 +702,7 @@ def evaluate_model(model, dataloader, device, text_features_all, img_features_al
 
 def main():
     parser = argparse.ArgumentParser(description='Train EEG-Image/Text Model')
-    parser.add_argument('--data_path', type=str, default="/mnt/dataset0/ldy/datasets/THINGS_EEG/Preprocessed_data_250Hz")
+    parser.add_argument('--data_path', type=str, default="./data/THINGS_EEG/Preprocessed_data_250Hz", help="Path to data (modify according to your dataset location)")
     parser.add_argument('--project', type=str, default="train_pos_img_text_rep")
     parser.add_argument('--entity', type=str, default="sustech_rethinkingbci")
     parser.add_argument('--name', type=str, default="lr=3e-4_img_pos_pro_eeg")
@@ -712,7 +714,7 @@ def main():
     parser.add_argument('--test_subjects', nargs='+', default=['sub-01'])
     parser.add_argument('--encoder_type', type=str, default='WaveW')
     parser.add_argument('--device', type=str, default='cuda:0')
-    parser.add_argument('--save_root', type=str, default="/mnt/dataset1/ldy/Workspace/FLORA/models", help='Root path for saving models')
+    parser.add_argument('--save_root', type=str, default="./models", help='Root path for saving models')
     
     args = parser.parse_args()
     config = vars(args)

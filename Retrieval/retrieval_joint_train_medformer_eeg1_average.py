@@ -631,7 +631,7 @@ def main_train_loop(sub, current_time, eeg_model, train_dataloader, test_dataloa
 def main():
     """Main function to parse arguments and run training"""
     parser = argparse.ArgumentParser(description='EEG Model Training Script')
-    parser.add_argument('--data_path', type=str, default='/home/ldy/THINGS-EEG1/processed_250Hz', help='Path to data')
+    parser.add_argument('--data_path', type=str, default='./data/THINGS_EEG/Preprocessed_data_250Hz', help='Path to EEG data')
     parser.add_argument('--output_dir', type=str, default='./outputs/contrast', help='Directory to save output results')
     parser.add_argument('--project', type=str, default='train_pos_img_text_rep', help='Project name for logging')
     parser.add_argument('--entity', type=str, default="sustech_rethinkingbci", help='WandB entity name')

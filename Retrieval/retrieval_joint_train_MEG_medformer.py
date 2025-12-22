@@ -550,7 +550,7 @@ def main_train_loop(sub, current_time, eeg_model, train_dataloader, test_dataloa
 def main():
     """Main function to parse arguments and run training"""
     parser = argparse.ArgumentParser(description='EEG Model Training Script')
-    parser.add_argument('--data_path', type=str, default='/mnt/dataset0/ldy/datasets/THINGS_MEG/ds004212/derivatives/preprocessed_npy', help='Path to data')
+    parser.add_argument('--data_path', type=str, default='./data/THINGS_MEG/preprocessed_npy', help='Path to data (modify according to your dataset location)')
     parser.add_argument('--output_dir', type=str, default='./outputs/contrast', help='Output directory')
     parser.add_argument('--project', type=str, default='train_pos_img_text_rep', help='WandB project name')
     parser.add_argument('--entity', type=str, default="sustech_rethinkingbci", help='WandB entity')

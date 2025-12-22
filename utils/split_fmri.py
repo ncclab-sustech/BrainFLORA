@@ -18,9 +18,10 @@ import pandas as pd
 # List of subjects to process
 # SUBJECTS = ['01', '02', '03']
 SUBJECTS = ['02', '03']
-# Directory paths
-BETAS_CSV_DIR = pjoin('/mnt/dataset0/ldy/datasets/THINGS_fMRI/THINGS_fMRI_Single_Trial_table', 'betas_csv')
-OUTPUT_BASE_DIR = '/home/ldy/fmri_dataset/Preprocessed'
+# Directory paths (modify according to your dataset location)
+BETAS_CSV_DIR = pjoin('./data/THINGS_fMRI/THINGS_fMRI_Single_Trial_table', 'betas_csv')
+# Output directory - MODIFY PATH ACCORDING TO YOUR SETUP
+OUTPUT_BASE_DIR = './data/fmri_dataset/Preprocessed'
 
 # ROI columns of interest
 ROI_COLUMNS = [

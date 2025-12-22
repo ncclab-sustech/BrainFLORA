@@ -26,13 +26,15 @@ os.environ['http_proxy'] = proxy
 os.environ['https_proxy'] = proxy
 device = "cuda" if torch.cuda.is_available() else "cpu"
 
-# Load configuration
-cfg = OmegaConf.load("/mnt/dataset1/ldy/Workspace/FLORA/configs/config.yaml")
+# Load configuration (relative to project root)
+_current_dir = os.path.dirname(os.path.abspath(__file__))
+_project_root = os.path.dirname(_current_dir)
+cfg = OmegaConf.load(os.path.join(_project_root, "configs/config.yaml"))
 cfg = OmegaConf.structured(cfg)
 
-# Dataset paths
-img_directory_training = "/mnt/dataset0/ldy/datasets/THINGS_EEG/images_set/training_images"
-img_directory_test = "/mnt/dataset0/ldy/datasets/THINGS_EEG/images_set/test_images"
+# Dataset paths (modify according to your dataset location)
+img_directory_training = "./data/THINGS_EEG/images_set/training_images"
+img_directory_test = "./data/THINGS_EEG/images_set/test_images"
 
 class CLIPEncoder(nn.Module):
     """CLIP model encoder for image features extraction"""
@@ -132,8 +134,9 @@ class EEGDataset():
         model_type = 'ViT-L-14' if use_caption else 'ViT-H-14'
         split = 'train' if train else 'test'
         modality = 'multimodal' if use_caption else ''
+        # Features file path (relative to project root)
         features_filename = os.path.join(
-            f'/mnt/dataset1/ldy/Workspace/FLORA/data_preparing/'
+            _current_dir,
             f'{model_type}_features_{modality}{split}.pt'
         )
         
@@ -429,8 +432,8 @@ class EEGDataset():
 
 
 if __name__ == "__main__":
-    # Example usage
-    data_path = "/mnt/dataset0/ldy/datasets/THINGS_EEG/Preprocessed_data_250Hz"
+    # Example usage (modify path according to your dataset location)
+    data_path = "./data/THINGS_EEG/Preprocessed_data_250Hz"
     
     # Create datasets
     train_dataset = EEGDataset(data_path, subjects=['sub-01'], train=True, use_caption=True)    

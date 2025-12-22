@@ -1,0 +1,68 @@
+# Core dependencies
+torch==2.0.1
+torchvision==0.15.2
+torchaudio
+
+# Deep Learning & AI
+transformers==4.36.0
+diffusers==0.25.0
+accelerate==0.26.0
+open_clip_torch
+
+# CLIP and Image Processing
+clip-retrieval
+ftfy
+kornia
+umap-learn
+
+# Diffusion Models
+dalle2-pytorch
+
+# Neuroscience & Brain Data Processing
+braindecode==0.8.1
+mne==1.5.1
+mne-bids==0.13
+
+# Scientific Computing
+numpy
+pandas
+scipy
+scikit-learn
+scikit-image
+
+# Machine Learning Utilities
+einops==0.7.0
+info-nce-pytorch==0.1.0
+pytorch-msssim
+reformer_pytorch
+
+# Visualization
+matplotlib
+seaborn
+tqdm
+
+# Experiment Tracking
+wandb
+
+# Jupyter & Development
+jupyter
+jupyterlab
+ipykernel
+ipython
+
+# Data Processing
+h5py
+pillow
+requests
+beautifulsoup4
+lxml
+pyyaml
+
+# Additional Utilities
+addict
+easydict
+decord
+moviepy
+nbformat
+regex
+
