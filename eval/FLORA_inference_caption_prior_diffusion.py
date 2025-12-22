@@ -10,7 +10,7 @@ from model.unified_encoder_multi_tower import UnifiedEncoder
 from model.diffusion_prior import Pipe, EmbeddingDataset, DiffusionPriorUNet
 from model.diffusion_prior_caption import Pipe as CaptionPipe, PriorNetwork, BrainDiffusionPrior
 from model.custom_pipeline import Generator4Embeds
-from loss import ClipLoss
+from utils.losses import ClipLoss
 
 # Set environment variables
 os.environ["WANDB_API_KEY"] = "KEY"

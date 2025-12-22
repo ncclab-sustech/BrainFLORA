@@ -3,6 +3,7 @@ BrainFLORA utilities package.
 
 This package contains various utility modules:
 - training: Training utilities (NativeScaler, wandb_logger, lr schedulers, etc.)
+- losses: Loss functions (ClipLoss, SupConLoss, mixco_nce, etc.)
 - misc: Miscellaneous utilities (distributed training helpers)
 - metrics: Evaluation metrics
 - masking: Data masking utilities
@@ -25,6 +26,17 @@ from .training import (
     unpatchify,
 )
 
+# Import loss functions
+from .losses import (
+    ClipLoss,
+    SupConLoss,
+    mixco_nce,
+    mixco_1d,
+    mixco_timeseries,
+    soft_clip_loss,
+    gather_features,
+)
+
 __all__ = [
     # Training utilities
     'NativeScaler',
@@ -38,5 +50,13 @@ __all__ = [
     'load_model',
     'patchify',
     'unpatchify',
+    # Loss functions
+    'ClipLoss',
+    'SupConLoss',
+    'mixco_nce',
+    'mixco_1d',
+    'mixco_timeseries',
+    'soft_clip_loss',
+    'gather_features',
 ]
 

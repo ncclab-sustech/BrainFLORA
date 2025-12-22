@@ -90,13 +90,8 @@ We provide preprocessed datasets ready for training on Hugging Face:
 
 ```python
 from datasets import load_dataset
-
 # Load the preprocessed BrainFLORA dataset
 dataset = load_dataset("LidongYang/BrainFLORA")
-
-# Access training and test splits
-train_data = dataset['train']
-test_data = dataset['test']
 ```
 
 
@@ -116,36 +111,49 @@ After downloading, use the preprocessing scripts in `data_preparing/` directory 
 
 
 <!-- ## Quick training and test  -->
-<h2 style="border-bottom: 1px solid lightgray; margin-bottom: 5px;">🚴‍♂️Quick training</h2>
+<h2 style="border-bottom: 1px solid lightgray; margin-bottom: 5px;">🚴‍♂️Quick Training</h2>
 
-
-#### 1.Visual Retrieval
-We provide the script to train the modality encoders for ``joint subject training`` in *THINGS-EEG2* dataset. Please modify your data set path and run:
-```
-cd Retrieval/
-python retrieval_joint_train_medformer.py --logger True --gpu cuda:0  --output_dir ./outputs/contrast
-```
-
-Additionally, replicating the results of other modalities (e.g. MEG, fMRI) by run
-```
-cd Retrieval/
+#### 1. Visual Retrieval
+We provide the script to train the modality encoders for ``joint subject training`` in *THINGS-EEG2* dataset. Please modify your dataset path and run:
+```bash
 python Retrieval/retrieval_joint_train_medformer.py --logger True --gpu cuda:0 --output_dir ./outputs/contrast
 ```
 
+Additionally, replicate the results of other modalities (e.g. MEG, fMRI) by running:
+```bash
+# MEG
+python Retrieval/retrieval_joint_train_MEG_medformer.py --logger True --gpu cuda:0 --output_dir ./outputs/contrast
 
-#### 2.Visual Reconstruction
-We provide quick training and inference scripts for ``high level and low level pipeline`` of visual reconstruction. Please modify your data set path and run zero-shot on test dataset:
-```
-# Train and get multimodal neural embeddings aligned with clip embedding:
-python train_unified_encoder_highlevel_diffprior.py --modalities ['eeg', 'meg', 'fmri'] --gpu cuda:0  --output_dir ./outputs/contrast
+# fMRI
+python Retrieval/retrieval_joint_train_fMRI_medformer.py --logger True --gpu cuda:0 --output_dir ./outputs/contrast
 ```
 
-#### 3.Visual Captioning
-
-We provide scripts for visual caption generation.
+#### 2. Visual Reconstruction
+We provide quick training and inference scripts for ``high level and low level pipeline`` of visual reconstruction. Please modify your dataset path and run:
+```bash
+# Train and get multimodal neural embeddings aligned with CLIP embedding:
+python train/train_unified_encoder_highlevel_diffprior.py \
+    --modalities eeg meg fmri \
+    --gpu cuda:0 \
+    --output_dir ./outputs/contrast
 ```
-# train feature adapter
-python train_unified_encoder_highlevel_diffprior.py --modalities ['eeg', 'meg', 'fmri'] --gpu cuda:0  --output_dir ./outputs/contrast
+
+#### 3. Visual Captioning
+We provide scripts for visual caption generation:
+```bash
+# Train feature adapter with caption support
+python train/train_unified_encoder_highlevel_diffprior_caption.py \
+    --modalities eeg meg fmri \
+    --gpu cuda:0 \
+    --output_dir ./outputs/contrast
+```
+
+#### 4. Distributed Training (Multi-GPU)
+For multi-GPU training with accelerate:
+```bash
+accelerate launch train/train_unified_encoder_highlevel_diffprior_parallel.py \
+    --modalities eeg meg fmri \
+    --output_dir ./outputs/contrast
 ```
 
 <!-- ## Quick training and test  -->

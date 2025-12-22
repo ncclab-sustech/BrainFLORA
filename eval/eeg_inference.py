@@ -33,7 +33,7 @@ from Retrieval.contrast_retrieval import (EEGNetv4_Encoder, MetaEEG, NICE, MindE
 
 # Import dataset and loss function
 from data_preparing.eegdatasets import EEGDataset
-from loss import ClipLoss
+from utils.losses import ClipLoss
 
 
 def get_model_class(model_name):

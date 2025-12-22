@@ -45,7 +45,7 @@ ModelClass = getattr(model_module, class_name)
 
 # Import dataset and loss function
 from data_preparing.megdatasets_averaged import MEGDataset
-from loss import ClipLoss
+from utils.losses import ClipLoss
 
 
 def extract_id_from_string(s):

@@ -26,8 +26,8 @@ import clip
 import torchvision.transforms as transforms
 from fmri_datasets_joint_subjects import fMRIDataset
 from braindecode.models import EEGNetv4, ATCNet, EEGConformer, EEGITNet, ShallowFBCSPNet
-from loss import ClipLoss
-from util import wandb_logger
+from utils.losses import ClipLoss
+from utils import wandb_logger
 from layers.Medformer_EncDec import Encoder, EncoderLayer
 from layers.SelfAttention_Family import MedformerLayer
 from layers.Embed import ListPatchEmbedding

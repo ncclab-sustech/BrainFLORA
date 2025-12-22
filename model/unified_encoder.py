@@ -22,7 +22,7 @@ from transformers import CLIPVisionModel
 from subject_layers.Transformer_EncDec import Encoder, EncoderLayer
 from subject_layers.SelfAttention_Family import FullAttention, AttentionLayer
 from subject_layers.Embed import DataEmbedding
-from loss import ClipLoss
+from utils.losses import ClipLoss
 from .components import RMSNorm
 from .perceiver import PerceiverResampler
 from .ATMS import ATMS

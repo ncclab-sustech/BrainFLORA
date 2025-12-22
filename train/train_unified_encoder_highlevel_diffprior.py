@@ -4,8 +4,17 @@
 @Author  :   DongyangLi
 @Version :   1.0
 @Desc    :   modified from [PAPER_NAME](https://arxiv.org/abs/XXXX.XXXXX) (CONFERENCE_ABBR'YY)
+
+Run from project root: python -m train.train_unified_encoder_highlevel_diffprior
+Or: python train/train_unified_encoder_highlevel_diffprior.py
 '''
 
+import sys
+from pathlib import Path
+# Add project root to path for imports
+PROJECT_ROOT = Path(__file__).resolve().parent.parent
+if str(PROJECT_ROOT) not in sys.path:
+    sys.path.insert(0, str(PROJECT_ROOT))
 
 import os
 import warnings
@@ -69,8 +78,8 @@ from model.diffusion_prior import Pipe, EmbeddingDataset, DiffusionPriorUNet
 from model.custom_pipeline import Generator4Embeds
 
 # Custom loss functions and utilities
-from loss import ClipLoss, mixco_nce, soft_clip_loss, mixco_1d
-from util import wandb_logger
+from utils.losses import ClipLoss, mixco_nce, soft_clip_loss, mixco_1d
+from utils import wandb_logger
 import utils.misc as misc
 
 # Suppress warnings for cleaner output

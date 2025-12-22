@@ -28,8 +28,8 @@ os.environ["WANDB_MODE"] = 'offline'
 
 # Import custom modules
 from megdatasets_joint_subjects import MEGDataset
-from util import wandb_logger
-from loss import ClipLoss
+from utils import wandb_logger
+from utils.losses import ClipLoss
 from braindecode.models import EEGNetv4, ATCNet, EEGConformer, EEGITNet, ShallowFBCSPNet
 
 # Import custom transformer components

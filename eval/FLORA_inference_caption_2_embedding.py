@@ -20,7 +20,7 @@ from data_preparing.eegdatasets import EEGDataset
 from data_preparing.megdatasets_averaged import MEGDataset
 from data_preparing.fmri_datasets_joint_subjects import fMRIDataset
 from data_preparing.datasets_mixer import MetaEEGDataset, MetaMEGDataset, MetafMRIDataset, MetaDataLoader
-from loss import ClipLoss
+from utils.losses import ClipLoss
 from model.diffusion_prior import Pipe, EmbeddingDataset, DiffusionPriorUNet
 from model.custom_pipeline import Generator4Embeds
 

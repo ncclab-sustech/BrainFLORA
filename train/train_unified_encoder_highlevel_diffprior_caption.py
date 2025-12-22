@@ -4,8 +4,17 @@
 @Author  :   DongyangLi
 @Version :   1.0
 @Desc    :   modified from [PAPER_NAME](https://arxiv.org/abs/XXXX.XXXXX) (CONFERENCE_ABBR'YY)
+
+Run from project root: python -m train.train_unified_encoder_highlevel_diffprior_caption
+Or: python train/train_unified_encoder_highlevel_diffprior_caption.py
 '''
 
+import sys
+from pathlib import Path
+# Add project root to path for imports
+PROJECT_ROOT = Path(__file__).resolve().parent.parent
+if str(PROJECT_ROOT) not in sys.path:
+    sys.path.insert(0, str(PROJECT_ROOT))
 
 # Standard library imports
 import os
@@ -15,6 +24,7 @@ import math
 import time
 import csv
 import copy
+import random
 import warnings
 import argparse
 import datetime
@@ -79,10 +89,10 @@ from model.diffusion_prior_caption import (
 from model.custom_pipeline import Generator4Embeds
 
 # Loss functions
-from loss import ClipLoss, mixco_nce, soft_clip_loss, mixco_1d
+from utils.losses import ClipLoss, mixco_nce, soft_clip_loss, mixco_1d
 
 # Utility functions
-from util import wandb_logger
+from utils import wandb_logger
 import utils.misc as misc
 
 

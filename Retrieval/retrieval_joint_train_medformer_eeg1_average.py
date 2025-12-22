@@ -26,9 +26,9 @@ import torchvision.transforms as transforms
 
 # Local imports
 from eeg1datasets_joint_subjects_average import EEGDataset
-from util import wandb_logger
+from utils import wandb_logger
 from braindecode.models import EEGNetv4, ATCNet, EEGConformer, EEGITNet, ShallowFBCSPNet
-from loss import ClipLoss
+from utils.losses import ClipLoss
 
 # Set environment variables for Weights & Biases
 os.environ["WANDB_API_KEY"] = "KEY"

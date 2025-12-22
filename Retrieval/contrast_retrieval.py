@@ -19,7 +19,7 @@ import torch.nn as nn
 import torchvision.transforms as transforms
 import tqdm
 from einops.layers.torch import Rearrange, Reduce
-from loss import ClipLoss
+from utils.losses import ClipLoss
 from sklearn.metrics import confusion_matrix
 from torch.utils.data import DataLoader, Dataset
 import random

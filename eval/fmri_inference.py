@@ -68,7 +68,7 @@ else:
         raise ValueError(f"Unknown model type: {MODEL_CONFIG['model_name']}")
 
 # Import loss function
-from loss import ClipLoss
+from utils.losses import ClipLoss
 
 def extract_id_from_string(s):
     """Extract numerical ID from a string (e.g., 'sub-01' -> 1)."""

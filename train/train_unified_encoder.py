@@ -4,8 +4,17 @@
 @Author  :   DongyangLi
 @Version :   1.0
 @Desc    :   modified from [PAPER_NAME](https://arxiv.org/abs/XXXX.XXXXX) (CONFERENCE_ABBR'YY)
+
+Run from project root: python -m train.train_unified_encoder
+Or: python train/train_unified_encoder.py
 '''
 
+import sys
+from pathlib import Path
+# Add project root to path for imports
+PROJECT_ROOT = Path(__file__).resolve().parent.parent
+if str(PROJECT_ROOT) not in sys.path:
+    sys.path.insert(0, str(PROJECT_ROOT))
 
 import argparse
 import copy
@@ -57,9 +66,9 @@ from data_preparing.datasets_mixer import MetaEEGDataset, MetaMEGDataset, MetafM
 from data_preparing.eegdatasets import EEGDataset
 from data_preparing.fmri_datasets_joint_subjects import fMRIDataset
 from data_preparing.megdatasets_averaged import MEGDataset
-from loss import ClipLoss
+from utils.losses import ClipLoss
 from model.unified_encoder_multi_tower import UnifiedEncoder
-from util import wandb_logger
+from utils import wandb_logger
 import utils.misc as misc
 
 # Environment variables

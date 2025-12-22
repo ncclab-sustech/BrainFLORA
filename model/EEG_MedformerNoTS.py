@@ -6,7 +6,7 @@ import torch.nn.functional as F
 import numpy as np
 from einops.layers.torch import Rearrange, Reduce
 from torch import Tensor
-from loss import ClipLoss
+from utils.losses import ClipLoss
 
 # Import from installed package (use `pip install -e .` from project root)
 from model.Medformer import Medformer

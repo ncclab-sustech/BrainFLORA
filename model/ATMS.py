@@ -26,7 +26,7 @@ from sklearn.metrics import confusion_matrix
 from subject_layers.Transformer_EncDec import Encoder, EncoderLayer
 from subject_layers.SelfAttention_Family import FullAttention, AttentionLayer
 from subject_layers.Embed import DataEmbedding
-from loss import ClipLoss
+from utils.losses import ClipLoss
 import utils.misc as misc
 
 # Set environment variables
