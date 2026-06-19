@@ -32,6 +32,7 @@ BrainFLORA is a reproducible multimodal neural embedding framework for EEG, MEG,
 
 ## News
 
+- **2026-06-19**: The codebase was reorganized and Hugging Face checkpoint weights were updated.
 - **2025-12-21**: Preprocessed datasets and pretrained checkpoints were released on [Hugging Face](https://huggingface.co/datasets/LidongYang/BrainFLORA).
 - **2025-07-15**: The [arXiv paper](https://arxiv.org/abs/2507.09747) was released.
 - **2025-07-12**: The codebase was released.
