@@ -4,17 +4,25 @@
 </h1>
 
 <p align="center">
+  <a href="https://dongyangli.site/">Dongyang Li</a>,
+  <a href="https://github.com/wojiao-yc">Haoyang Qin</a>,
+  <a href="https://www.wormforce.net/members/mingyang-wu">Mingyang Wu</a>,
+  <a href="https://hedges0-0.github.io/">Chen Wei</a>,
+  <a href="https://scholar.google.com/citations?user=UpP9hJ8AAAAJ&hl=en">Quanying Liu</a>
+</p>
+
+<p align="center">
   <a href="https://arxiv.org/abs/2507.09747"><img src="https://img.shields.io/badge/Paper-arXiv%3A2507.09747-B31B1B.svg" alt="Paper"></a>
   <a href="https://huggingface.co/datasets/LidongYang/BrainFLORA"><img src="https://img.shields.io/badge/Data%20%26%20Checkpoints-Hugging%20Face-blue" alt="Hugging Face"></a>
   <a href="./LICENSE"><img src="https://img.shields.io/badge/License-MIT-green.svg" alt="License"></a>
 </p>
 
 <p align="center">
-  <img src="imgs/fig-overview_00.png" width="72%" alt="BrainFLORA overview">
+  <img src="imgs/fig-overview_00.png" width="100%" alt="BrainFLORA overview">
 </p>
 
 <p align="center">
-  <img src="imgs/fig-framework_00.png" width="68%" alt="BrainFLORA framework">
+  <img src="imgs/fig-framework_00.png" width="100%" alt="BrainFLORA framework">
 </p>
 
 BrainFLORA is a reproducible multimodal neural embedding framework for EEG, MEG, and fMRI visual retrieval, image reconstruction, and image captioning. The repository provides unified command-line entry points for training, inference, and evaluation with the released checkpoints.
