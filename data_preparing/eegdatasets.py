@@ -32,9 +32,9 @@ _project_root = os.path.dirname(_current_dir)
 cfg = OmegaConf.load(os.path.join(_project_root, "configs/config.yaml"))
 cfg = OmegaConf.structured(cfg)
 
-# Dataset paths (modify according to your dataset location)
-img_directory_training = "./data/THINGS_EEG/images_set/training_images"
-img_directory_test = "./data/THINGS_EEG/images_set/test_images"
+# Dataset paths
+img_directory_training = cfg.eegdataset.img_directory_training
+img_directory_test = cfg.eegdataset.img_directory_test
 
 class CLIPEncoder(nn.Module):
     """CLIP model encoder for image features extraction"""

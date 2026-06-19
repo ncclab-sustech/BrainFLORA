@@ -1,281 +1,337 @@
-import sys
-import os
+"""Generate caption-token embeddings from brain signals.
+
+This is stage 1 of the BrainFLORA caption pipeline:
+
+    brain signal -> caption UnifiedEncoder -> woPrior token embeddings
+
+The saved tensors are consumed by ``FLORA_inference_caption_prior_diffusion.py``
+and ``shikra_caption.py``.
+"""
+
+from __future__ import annotations
+
+import argparse
+import json
 import random
 import re
-import argparse
-import warnings
+import sys
+from pathlib import Path
+from typing import Any
+
 import numpy as np
 import torch
-from torch import nn
-from torch.nn import functional as F
-from torch.optim import Adam
-from torch.nn.utils import clip_grad_norm_
-from torch.utils.data import DataLoader, Dataset
-import wandb
-from sklearn.metrics import confusion_matrix
+from torch.utils.data import DataLoader
 
-# Local imports
-from model.unified_encoder_multi_tower import UnifiedEncoder
+PROJECT_ROOT = Path(__file__).resolve().parents[1]
+if str(PROJECT_ROOT) not in sys.path:
+    sys.path.insert(0, str(PROJECT_ROOT))
+
+from data_preparing import eegdatasets as eeg_dataset_module
+from data_preparing import fmri_datasets_joint_subjects as fmri_dataset_module
+from data_preparing import megdatasets_averaged as meg_dataset_module
 from data_preparing.eegdatasets import EEGDataset
-from data_preparing.megdatasets_averaged import MEGDataset
 from data_preparing.fmri_datasets_joint_subjects import fMRIDataset
-from data_preparing.datasets_mixer import MetaEEGDataset, MetaMEGDataset, MetafMRIDataset, MetaDataLoader
+from data_preparing.megdatasets_averaged import MEGDataset
+from model.unified_encoder_multi_tower import UnifiedEncoder
 from utils.losses import ClipLoss
-from model.diffusion_prior import Pipe, EmbeddingDataset, DiffusionPriorUNet
-from model.custom_pipeline import Generator4Embeds
 
-# Set environment variables
-os.environ["WANDB_API_KEY"] = "KEY"
-os.environ["WANDB_MODE"] = 'offline'
-os.environ["WANDB_SILENT"] = "true"
-warnings.filterwarnings("ignore")  # Ignore warnings
-wandb.init(mode="disabled")  # Disable wandb
 
-# Set up project paths (relative to this file)
-_current_dir = os.path.dirname(os.path.abspath(__file__))
-_project_root = os.path.dirname(_current_dir)
-if _project_root not in sys.path:
-    sys.path.insert(0, _project_root)
-# Project uses editable install - run `pip install -e .` from project root
+DEFAULT_DATA_PATHS = {
+    "eeg": Path("/vePFS-0x0d/visual/dataset/THINGS_EEG/Preprocessed_data_250Hz"),
+    "meg": Path("/vePFS-0x0d/visual/dataset/THINGS_MEG/preprocessed_newsplit"),
+    "fmri": Path("/vePFS-0x0d/visual/dataset/fmri_dataset/Preprocessed"),
+}
 
-def extract_id_from_string(s):
-    """Extract numerical ID from string using regex.
-    
-    Args:
-        s (str): Input string containing an ID at the end
-        
-    Returns:
-        int: Extracted numerical ID or None if not found
-    """
-    match = re.search(r'\d+$', s)
-    if match:
-        return int(match.group())
-    return None
+DEFAULT_TEST_IMAGE_DIRS = {
+    "eeg": Path("/vePFS-0x0d/visual/dataset/THINGS_EEG/images_set/test_images"),
+    "meg": Path("/vePFS-0x0d/visual/dataset/THINGS_MEG/images_set_filter/test_images"),
+    "fmri": Path("/vePFS-0x0d/visual/dataset/fmri_dataset/images/test_images"),
+}
 
-def get_eegfeatures(unified_model, dataloader, device, text_features_all, img_features_all, k, eval_modality, test_classes):
-    """Extract EEG features and evaluate model performance.
-    
-    Args:
-        unified_model: The trained unified encoder model
-        dataloader: DataLoader for evaluation data
-        device: Device to run computation on
-        text_features_all: Precomputed text features
-        img_features_all: Precomputed image features
-        k: Number of classes to evaluate against
-        eval_modality: Current evaluation modality ('eeg', 'meg' or 'fmri')
-        test_classes: Total number of test classes
-        
-    Returns:
-        tuple: (average_loss, accuracy, top5_acc, labels, features_tensor)
-    """
-    unified_model.eval()
-    text_features_all = text_features_all[eval_modality].to(device).float()
-    
-    # Handle different modalities' image features
-    if eval_modality == 'eeg' or eval_modality == 'fmri':
-        img_features_all = img_features_all[eval_modality].to(device).float()
-    elif eval_modality == 'meg':
-        img_features_all = img_features_all[eval_modality][::12].to(device).float()
-        
-    # Initialize metrics
-    total_loss = 0
-    correct = 0
-    top5_correct_count = 0
-    total = 0
+DEFAULT_SINGLE_CHECKPOINTS = {
+    "eeg": PROJECT_ROOT / "checkpoints/eeg_01-06_01-46_150.pth",
+    "meg": PROJECT_ROOT / "checkpoints/meg_01-11_14-50_150.pth",
+    "fmri": PROJECT_ROOT / "checkpoints/fmri_01-18_01-35_150.pth",
+}
+
+DEFAULT_CAPTION_CHECKPOINT = PROJECT_ROOT / "checkpoints/caption_checkpoints/90.pth"
+DEFAULT_OUTPUT_ROOT = PROJECT_ROOT / "features/FLORA"
+
+SUBJECTS = {
+    "eeg": [f"sub-{i:02d}" for i in range(1, 11)],
+    "meg": [f"sub-{i:02d}" for i in range(1, 5)],
+    "fmri": [f"sub-{i:02d}" for i in range(1, 4)],
+}
+
+FEATURE_MODALITY_DIRS = {
+    "eeg": "EEG",
+    "meg": "MEG",
+    "fmri": "fMRI",
+}
+
+
+def set_seed(seed: int) -> None:
+    random.seed(seed)
+    np.random.seed(seed)
+    torch.manual_seed(seed)
+    if torch.cuda.is_available():
+        torch.cuda.manual_seed_all(seed)
+
+
+def subject_number(subject: str) -> int:
+    match = re.search(r"\d+$", subject)
+    if match is None:
+        raise ValueError(f"Cannot parse subject id from {subject!r}")
+    return int(match.group())
+
+
+def normalize_subject(subject: str) -> str:
+    return f"sub-{subject_number(subject):02d}"
+
+
+def resolve_path(path: str | Path) -> Path:
+    path = Path(path).expanduser()
+    return path if path.is_absolute() else PROJECT_ROOT / path
+
+
+def torch_load(path: Path, map_location: str | torch.device):
+    try:
+        return torch.load(path, map_location=map_location, weights_only=False)
+    except TypeError:
+        return torch.load(path, map_location=map_location)
+
+
+def require_path(path: Path, label: str) -> None:
+    if not path.exists():
+        raise FileNotFoundError(f"{label} does not exist: {path}")
+
+
+def configure_dataset_image_dirs(image_dirs: dict[str, Path]) -> None:
+    eeg_dataset_module.img_directory_test = str(image_dirs["eeg"])
+    meg_dataset_module.img_directory_test = str(image_dirs["meg"])
+    fmri_dataset_module.img_directory_test = str(image_dirs["fmri"])
+
+
+def build_dataset(
+    modality: str,
+    subject: str,
+    data_paths: dict[str, Path],
+    use_caption_features: bool,
+):
+    if modality == "eeg":
+        return EEGDataset(
+            str(data_paths["eeg"]),
+            subjects=[subject],
+            train=False,
+            use_caption=use_caption_features,
+        )
+    if modality == "meg":
+        return MEGDataset(
+            str(data_paths["meg"]),
+            subjects=[subject],
+            train=False,
+            use_caption=use_caption_features,
+        )
+    if modality == "fmri":
+        return fMRIDataset(
+            str(data_paths["fmri"]),
+            adap_subject=subject,
+            subjects=[subject],
+            train=False,
+            use_caption=use_caption_features,
+        )
+    raise ValueError(f"Unknown modality: {modality}")
+
+
+def candidate_img_features(dataset, modality: str) -> torch.Tensor:
+    if modality == "meg":
+        return dataset.img_features[::12]
+    return dataset.img_features
+
+
+def output_path(output_root: Path, modality: str, subject: str) -> Path:
+    subject_id = f"{subject_number(subject):02d}"
+    return (
+        output_root
+        / FEATURE_MODALITY_DIRS[modality]
+        / "256_1024"
+        / f"FLORA_neural_features_sub-{subject_id}_woPrior_test.pt"
+    )
+
+
+def build_model(
+    device: torch.device,
+    single_checkpoints: dict[str, Path],
+    caption_checkpoint: Path,
+) -> UnifiedEncoder:
+    for modality, checkpoint in single_checkpoints.items():
+        require_path(checkpoint, f"{modality} checkpoint")
+    require_path(caption_checkpoint, "caption unified checkpoint")
+
+    model = UnifiedEncoder(
+        {modality: str(path) for modality, path in single_checkpoints.items()},
+        device=device,
+        user_caption=True,
+    )
+    state = torch_load(caption_checkpoint, map_location=device)
+    model.load_state_dict(state, strict=True)
+    model.to(device)
+    model.eval()
+    return model
+
+
+@torch.no_grad()
+def extract_subject_embeddings(
+    model: UnifiedEncoder,
+    modality: str,
+    subject: str,
+    data_paths: dict[str, Path],
+    device: torch.device,
+    batch_size: int,
+    k_values: list[int],
+    use_caption_features: bool,
+    max_batches: int | None,
+) -> tuple[torch.Tensor, dict[str, Any]]:
+    dataset = build_dataset(modality, subject, data_paths, use_caption_features)
+    loader = DataLoader(dataset, batch_size=batch_size, shuffle=False, num_workers=0, drop_last=False)
+    img_features_all = candidate_img_features(dataset, modality).to(device).float()
+    n_classes = img_features_all.shape[0]
+    valid_k_values = [k for k in k_values if k <= n_classes]
+    all_labels = set(range(n_classes))
     loss_func = ClipLoss()
-    all_labels = set(range(text_features_all.size(0)))
-    save_features = True
-    features_list = []
-    features_tensor = torch.zeros(0, 0)
-    
-    with torch.no_grad():
-        for batch_idx, (modal, data, labels, text, text_features, img, img_features, _, _, sub_ids) in enumerate(dataloader):
-            # Move data to device
-            data = data.to(device)
-            text_features = text_features.to(device).float()
-            labels = labels.to(device)
-            img_features = img_features.to(device).float()
-            
-            batch_size = data.size(0)
-            subject_ids = [extract_id_from_string(sub_id) for sub_id in sub_ids]
-            subject_ids = torch.tensor(subject_ids, dtype=torch.long).to(device)
-            
-            # Get model outputs
-            ret_emb, neural_features = unified_model(data, subject_ids, modal=eval_modality)
-            logit_scale = unified_model.logit_scale.float()
-            features_list.append(neural_features)
-            
-            # Calculate loss
-            img_loss = loss_func(ret_emb, img_features, logit_scale)
-            loss = img_loss
-            total_loss += loss.item()
-            
-            # Evaluate accuracy
-            for idx, label in enumerate(labels):
-                possible_classes = list(all_labels - {label.item()})
-                selected_classes = random.sample(possible_classes, k-1) + [label.item()]
-                selected_img_features = img_features_all[selected_classes]
-                
-                logits_img = logit_scale * ret_emb[idx] @ selected_img_features.T
-                logits_single = logits_img
-                
-                predicted_label = selected_classes[torch.argmax(logits_single).item()]
-                if predicted_label == label.item():
-                    correct += 1
-                    
-                if k == test_classes:
-                    _, top5_indices = torch.topk(logits_single, 5, largest=True)
-                    if label.item() in [selected_classes[i] for i in top5_indices.tolist()]:
-                        top5_correct_count += 1
-                total += 1
-                
-        if save_features:
-            features_tensor = torch.cat(features_list, dim=0)
-            print("features_tensor", features_tensor.shape)
-            torch.save(features_tensor.cpu(), f"test.pt")
-    
-    # Calculate final metrics
-    average_loss = total_loss / (batch_idx + 1)
-    accuracy = correct / total
-    top5_acc = top5_correct_count / total
-    
-    return average_loss, accuracy, top5_acc, labels, features_tensor.cpu()
+    logit_scale = model.logit_scale.float()
+    totals = {k: 0 for k in valid_k_values}
+    correct = {k: 0 for k in valid_k_values}
+    top5_correct = {k: 0 for k in valid_k_values}
+    total_loss = 0.0
+    total_batches = 0
+    total_samples = 0
+    token_embeddings = []
 
-def main():
-    """Main execution function for model evaluation."""
-    # Configuration parameters
-    # Modify checkpoint paths according to your setup
-    encoder_paths_list = [
-        'eeg=./checkpoints/eeg_encoder.pth',
-        'meg=./checkpoints/meg_encoder.pth',
-        'fmri=./checkpoints/fmri_encoder.pth'
-    ]
-    
-    # Evaluation configuration
-    eval_modality = 'fmri'
-    test_subjects = ['sub-03']
-    eeg_subjects = ['sub-01', 'sub-02', 'sub-03', 'sub-04', 'sub-05', 'sub-06', 'sub-07', 'sub-08', 'sub-09', 'sub-10']
-    meg_subjects = ['sub-01', 'sub-02', 'sub-03', 'sub-04']
-    fmri_subjects = ['sub-01', 'sub-02', 'sub-03']
-    modalities = ['eeg', 'meg', 'fmri']
-    test_classes = 100
-    
-    # Dataset paths (modify according to your dataset location)
-    eeg_data_path = "./data/THINGS_EEG/Preprocessed_data_250Hz"
-    meg_data_path = "./data/THINGS_MEG/preprocessed_newsplit"
-    fmri_data_path = "./data/fmri_dataset/Preprocessed"
-    
-    # Device configuration
-    device_preference = 'cuda:4'
-    device_type = 'gpu'
-    device = torch.device(device_preference if device_type == 'gpu' and torch.cuda.is_available() else 'cpu')
-    print(f"Using device: {device}")
-    
-    # Process encoder paths
-    encoder_paths = {}
-    for path in encoder_paths_list:
-        key, value = path.split('=')
-        encoder_paths[key] = value
-    
-    # Initialize model
-    unified_model = UnifiedEncoder(encoder_paths, device, user_caption=True)
-    # Modify model checkpoint path according to your setup
-    unified_model.load_state_dict(torch.load(os.path.join(_project_root, "checkpoints/unified_encoder_caption.pth")))
-    unified_model.to(device)
-    unified_model.eval()
-    
-    # Print model info
-    def format_num(num):
-        """Format large numbers with appropriate units."""
-        for unit in ['','K','M','B','T']:
-            if num < 1000:
-                return f"{num:.2f}{unit}"
-            num /= 1000
-        return f"{num:.2f}P"
-    
-    total_params = sum(p.numel() for p in unified_model.parameters())
-    trainable_params = sum(p.numel() for p in unified_model.parameters() if p.requires_grad)
-    print(f"Total parameters: {format_num(total_params)}")
-    print(f"Trainable parameters: {format_num(trainable_params)}")
-    
-    if total_params > 0:
-        trainable_percentage = (trainable_params / total_params) * 100
-        print(f"Trainable parameters percentage: {trainable_percentage:.2f}%")
-    else:
-        print("Total parameters count is zero, cannot compute percentage.")
-    
-    # Evaluation loop
-    text_features_test_all = {}
-    img_features_test_all = {}
-    test_accuracies = []
-    test_accuracies_top5 = []
-    v2_accuracies = []
-    v4_accuracies = []
-    v10_accuracies = []
-    
-    for sub in test_subjects:
-        # Prepare test dataset
-        if eval_modality == 'eeg':
-            test_dataset = EEGDataset(eeg_data_path, subjects=[sub], train=False)
-        elif eval_modality == 'meg':
-            test_dataset = MEGDataset(meg_data_path, subjects=[sub], train=False)
-        elif eval_modality == 'fmri':
-            test_dataset = fMRIDataset(fmri_data_path, adap_subject=sub, subjects=[sub], train=False)
-        
-        # Collect features
-        text_features_test_all[eval_modality] = test_dataset.text_features
-        img_features_test_all[eval_modality] = test_dataset.img_features
-        
-        # Create dataloader
-        test_loader = DataLoader(test_dataset, batch_size=1, shuffle=False, num_workers=0, drop_last=False)
-        
-        # Evaluate at different k values
-        test_loss, test_accuracy, top5_acc, labels, eeg_features_test = get_eegfeatures(
-            unified_model, test_loader, device, text_features_test_all, img_features_test_all, 
-            k=test_classes, eval_modality=eval_modality, test_classes=test_classes
+    for batch_index, batch in enumerate(loader):
+        if max_batches is not None and batch_index >= max_batches:
+            break
+        _, data, labels, _, _, _, img_features, _, _, sub_ids = batch
+        data = data.to(device).float()
+        labels = labels.to(device)
+        img_features = img_features.to(device).float()
+        subject_ids = torch.tensor(
+            [subject_number(sub_id) for sub_id in sub_ids],
+            dtype=torch.long,
+            device=device,
         )
-        _, v2_acc, _, _, _ = get_eegfeatures(
-            unified_model, test_loader, device, text_features_test_all, img_features_test_all, 
-            k=2, eval_modality=eval_modality, test_classes=test_classes
-        )
-        _, v4_acc, _, _, _ = get_eegfeatures(
-            unified_model, test_loader, device, text_features_test_all, img_features_test_all, 
-            k=4, eval_modality=eval_modality, test_classes=test_classes
-        )
-        _, v10_acc, _, _, _ = get_eegfeatures(
-            unified_model, test_loader, device, text_features_test_all, img_features_test_all, 
-            k=10, eval_modality=eval_modality, test_classes=test_classes
-        )
-        
-        # Store results
-        test_accuracies.append(test_accuracy)
-        test_accuracies_top5.append(top5_acc)
-        v2_accuracies.append(v2_acc)
-        v4_accuracies.append(v4_acc)
-        v10_accuracies.append(v10_acc)
-        
-        # Print results
-        print(f" - Test Loss: {test_loss:.4f}, Test Accuracy: {test_accuracy:.4f}, Top5 Accuracy: {top5_acc:.4f}")    
-        print(f" - Test Loss: {test_loss:.4f}, v2_acc Accuracy: {v2_acc:.4f}")
-        print(f" - Test Loss: {test_loss:.4f}, v4_acc Accuracy: {v4_acc:.4f}")
-        print(f" - Test Loss: {test_loss:.4f}, v10_acc Accuracy: {v10_acc:.4f}")
-    
-    # Calculate and print average metrics
-    average_test_accuracy = np.mean(test_accuracies)
-    average_test_accuracy_top5 = np.mean(test_accuracies_top5)
-    average_v2_acc = np.mean(v2_accuracies)
-    average_v4_acc = np.mean(v4_accuracies)
-    average_v10_acc = np.mean(v10_accuracies)
-    
-    print(f"\nAverage Test Accuracy across all subjects: {average_test_accuracy:.4f}")
-    print(f"\nAverage Test Top5 Accuracy across all subjects: {average_test_accuracy_top5:.4f}")
-    print(f"Average v2_acc Accuracy across all subjects: {average_v2_acc:.4f}")
-    print(f"Average v4_acc Accuracy across all subjects: {average_v4_acc:.4f}")
-    print(f"Average v10_acc Accuracy across all subjects: {average_v10_acc:.4f}")
-    
-    # Save features
-    eeg_features_test.shape
-    torch.save(eeg_features_test, os.path.join(_current_dir, 'fMRI_features_sub_03_test.pt'))
+        ret_emb, neural_tokens = model(data, subject_ids, modal=modality)
+        token_embeddings.append(neural_tokens.cpu())
+        total_loss += loss_func(ret_emb.float(), img_features.float(), logit_scale).item()
+        total_batches += 1
+        total_samples += labels.numel()
+
+        for row, label_tensor in enumerate(labels):
+            label = int(label_tensor.item())
+            possible = list(all_labels - {label})
+            for k in valid_k_values:
+                selected = random.sample(possible, k - 1) + [label]
+                logits = logit_scale * ret_emb[row].float() @ img_features_all[selected].T
+                predicted = selected[int(torch.argmax(logits).item())]
+                totals[k] += 1
+                correct[k] += int(predicted == label)
+                if k >= 5:
+                    _, top_indices = torch.topk(logits, 5, largest=True)
+                    top5_labels = [selected[i] for i in top_indices.tolist()]
+                    top5_correct[k] += int(label in top5_labels)
+
+    metrics: dict[str, Any] = {
+        "modality": modality,
+        "subject": subject,
+        "n_classes": n_classes,
+        "n_samples": total_samples,
+        "loss": total_loss / max(total_batches, 1),
+    }
+    for k in valid_k_values:
+        metrics[f"acc@{k}"] = correct[k] / max(totals[k], 1)
+        if k >= 5:
+            metrics[f"top5@{k}"] = top5_correct[k] / max(totals[k], 1)
+    return torch.cat(token_embeddings, dim=0), metrics
+
+
+def parse_args() -> argparse.Namespace:
+    parser = argparse.ArgumentParser(description="Generate caption woPrior embeddings.")
+    parser.add_argument("--device", default="cuda:0" if torch.cuda.is_available() else "cpu")
+    parser.add_argument("--batch-size", type=int, default=16)
+    parser.add_argument("--seed", type=int, default=42)
+    parser.add_argument("--modalities", nargs="+", choices=["eeg", "meg", "fmri"], default=["eeg", "meg", "fmri"])
+    parser.add_argument("--subjects", nargs="*", default=None, help="Optional subset, e.g. sub-01 02")
+    parser.add_argument("--k-values", nargs="+", type=int, default=[2, 4, 10, 50, 100, 200])
+    parser.add_argument("--output-root", type=Path, default=DEFAULT_OUTPUT_ROOT)
+    parser.add_argument("--metrics-json", type=Path, default=PROJECT_ROOT / "outputs/caption_embedding/caption_woPrior_metrics.json")
+    parser.add_argument("--use-caption-features", action="store_true")
+    parser.add_argument("--max-batches", type=int, default=None, help="Optional smoke-test limit per subject.")
+    parser.add_argument("--eeg-data-path", type=Path, default=DEFAULT_DATA_PATHS["eeg"])
+    parser.add_argument("--meg-data-path", type=Path, default=DEFAULT_DATA_PATHS["meg"])
+    parser.add_argument("--fmri-data-path", type=Path, default=DEFAULT_DATA_PATHS["fmri"])
+    parser.add_argument("--eeg-image-dir", type=Path, default=DEFAULT_TEST_IMAGE_DIRS["eeg"])
+    parser.add_argument("--meg-image-dir", type=Path, default=DEFAULT_TEST_IMAGE_DIRS["meg"])
+    parser.add_argument("--fmri-image-dir", type=Path, default=DEFAULT_TEST_IMAGE_DIRS["fmri"])
+    parser.add_argument("--eeg-checkpoint", type=Path, default=DEFAULT_SINGLE_CHECKPOINTS["eeg"])
+    parser.add_argument("--meg-checkpoint", type=Path, default=DEFAULT_SINGLE_CHECKPOINTS["meg"])
+    parser.add_argument("--fmri-checkpoint", type=Path, default=DEFAULT_SINGLE_CHECKPOINTS["fmri"])
+    parser.add_argument("--caption-checkpoint", type=Path, default=DEFAULT_CAPTION_CHECKPOINT)
+    return parser.parse_args()
+
+
+def main() -> None:
+    args = parse_args()
+    set_seed(args.seed)
+    device = torch.device(args.device if args.device.startswith("cuda") and torch.cuda.is_available() else "cpu")
+    data_paths = {
+        "eeg": resolve_path(args.eeg_data_path),
+        "meg": resolve_path(args.meg_data_path),
+        "fmri": resolve_path(args.fmri_data_path),
+    }
+    image_dirs = {
+        "eeg": resolve_path(args.eeg_image_dir),
+        "meg": resolve_path(args.meg_image_dir),
+        "fmri": resolve_path(args.fmri_image_dir),
+    }
+    configure_dataset_image_dirs(image_dirs)
+    single_checkpoints = {
+        "eeg": resolve_path(args.eeg_checkpoint),
+        "meg": resolve_path(args.meg_checkpoint),
+        "fmri": resolve_path(args.fmri_checkpoint),
+    }
+    output_root = resolve_path(args.output_root)
+    model = build_model(device, single_checkpoints, resolve_path(args.caption_checkpoint))
+    metrics = []
+
+    for modality in args.modalities:
+        subjects = [normalize_subject(s) for s in args.subjects] if args.subjects else SUBJECTS[modality]
+        subjects = [sub for sub in subjects if sub in SUBJECTS[modality]]
+        for subject in subjects:
+            print(f"Generating woPrior embeddings for modality={modality} subject={subject}")
+            embeddings, row = extract_subject_embeddings(
+                model,
+                modality,
+                subject,
+                data_paths,
+                device,
+                args.batch_size,
+                args.k_values,
+                args.use_caption_features,
+                args.max_batches,
+            )
+            path = output_path(output_root, modality, subject)
+            path.parent.mkdir(parents=True, exist_ok=True)
+            torch.save(embeddings, path)
+            row["embedding_path"] = str(path)
+            row["embedding_shape"] = list(embeddings.shape)
+            metrics.append(row)
+            print(f"Wrote {path} with shape {tuple(embeddings.shape)}")
+
+    metrics_path = resolve_path(args.metrics_json)
+    metrics_path.parent.mkdir(parents=True, exist_ok=True)
+    metrics_path.write_text(json.dumps(metrics, indent=2) + "\n")
+    print(f"Wrote {metrics_path}")
+
 
 if __name__ == "__main__":
     main()

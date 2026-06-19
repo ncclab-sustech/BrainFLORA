@@ -44,6 +44,7 @@ coverage.xml
 # 数据文件（通常很大，不应提交）
 data/
 datasets/
+features/
 *.h5
 *.hdf5
 *.npy
@@ -59,6 +60,7 @@ datasets/
 checkpoints/
 checkpoint/
 weights/
+external_models/
 models/*.pth
 models/*.pt
 models/*.ckpt
@@ -85,6 +87,12 @@ temp/
 *.tmp
 *.bak
 *.backup
+
+# BrainFLORA generated artifacts
+Caption/*_caption/Prior/*_caption*.json
+Caption/*_caption/Prior/*_caption*.txt
+Caption/*_caption/woPrior/*_caption*.json
+Caption/*_caption/woPrior/*_caption*.txt
 
 # 系统文件
 .DS_Store

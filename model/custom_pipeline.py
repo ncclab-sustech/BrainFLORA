@@ -1,4 +1,29 @@
+import os
+from pathlib import Path
+
 from diffusers.pipelines.stable_diffusion_xl.pipeline_stable_diffusion_xl import *
+
+
+def _local_hf_snapshot(repo_id_or_path):
+    path = Path(repo_id_or_path).expanduser()
+    if path.exists() or "/" not in str(repo_id_or_path):
+        return str(path if path.exists() else repo_id_or_path)
+
+    cache_root = Path(
+        os.environ.get(
+            "HUGGINGFACE_HUB_CACHE",
+            Path(os.environ.get("HF_HOME", Path.home() / ".cache" / "huggingface")) / "hub",
+        )
+    )
+    repo_cache = cache_root / ("models--" + str(repo_id_or_path).replace("/", "--"))
+    snapshots_dir = repo_cache / "snapshots"
+    if not snapshots_dir.exists():
+        raise FileNotFoundError(f"No local Hugging Face snapshot found for {repo_id_or_path}: {snapshots_dir}")
+    snapshots = [p for p in snapshots_dir.iterdir() if p.is_dir()]
+    if not snapshots:
+        raise FileNotFoundError(f"No local Hugging Face snapshot found for {repo_id_or_path}: {snapshots_dir}")
+    snapshots.sort(key=lambda p: p.stat().st_mtime, reverse=True)
+    return str(snapshots[0])
 
 @torch.no_grad()
 @replace_example_docstring(EXAMPLE_DOC_STRING)
@@ -455,7 +480,14 @@ def encode_image(image, image_encoder, feature_extractor, num_images_per_prompt=
 
 class Generator4Embeds:
 
-    def __init__(self, num_inference_steps=1, device='cuda') -> None:
+    def __init__(
+        self,
+        num_inference_steps=1,
+        device='cuda',
+        sdxl_model="stabilityai/sdxl-turbo",
+        ip_adapter_model="h94/IP-Adapter",
+        local_files_only=False,
+    ) -> None:
         # import os
         # os.environ['http_proxy'] = 'http://10.16.35.10:13390' 
         # os.environ['https_proxy'] = 'http://10.16.35.10:13390' 
@@ -463,18 +495,28 @@ class Generator4Embeds:
         self.num_inference_steps = num_inference_steps
         self.dtype = torch.float16
         self.device = device
+        if local_files_only:
+            sdxl_model = _local_hf_snapshot(sdxl_model)
+            ip_adapter_model = _local_hf_snapshot(ip_adapter_model)
         
         # path = '/home/weichen/.cache/huggingface/hub/models--stabilityai--sdxl-turbo/snapshots/f4b0486b498f84668e828044de1d0c8ba486e05b'
         # path = "/home/ldy/Workspace/sdxl-turbo/f4b0486b498f84668e828044de1d0c8ba486e05b"
-        pipe = DiffusionPipeline.from_pretrained("stabilityai/sdxl-turbo", torch_dtype=torch.float16, variant="fp16")
+        pipe = DiffusionPipeline.from_pretrained(
+            sdxl_model,
+            torch_dtype=torch.float16,
+            variant="fp16",
+            local_files_only=local_files_only,
+        )
         # pipe = DiffusionPipeline.from_pretrained(path, torch_dtype=torch.float16, variant="fp16")
         pipe.to(device)
         pipe.generate_ip_adapter_embeds = generate_ip_adapter_embeds.__get__(pipe)
         # load ip adapter
         pipe.load_ip_adapter(
-            "h94/IP-Adapter", subfolder="sdxl_models", 
-            weight_name="ip-adapter_sdxl_vit-h.safetensors", 
-            torch_dtype=torch.float16)
+            ip_adapter_model, subfolder="sdxl_models",
+            weight_name="ip-adapter_sdxl_vit-h.safetensors",
+            image_encoder_folder="models/image_encoder",
+            torch_dtype=torch.float16,
+            local_files_only=local_files_only)
         # set ip_adapter scale (defauld is 1)
         pipe.set_ip_adapter_scale(1)
         self.pipe = pipe

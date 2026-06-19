@@ -8,8 +8,10 @@ transformers==4.36.0
 diffusers==0.25.0
 accelerate==0.26.0
 open_clip_torch
+omegaconf
 
 # CLIP and Image Processing
+git+https://github.com/openai/CLIP.git
 clip-retrieval
 ftfy
 kornia
@@ -29,6 +31,7 @@ pandas
 scipy
 scikit-learn
 scikit-image
+pycocoevalcap
 
 # Machine Learning Utilities
 einops==0.7.0
@@ -65,4 +68,3 @@ decord
 moviepy
 nbformat
 regex
-
