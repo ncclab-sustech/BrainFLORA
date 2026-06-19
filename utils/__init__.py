@@ -11,32 +11,6 @@ This package contains various utility modules:
 - timefeatures: Time feature extraction
 """
 
-# Import commonly used utilities for convenience
-from .training import (
-    NativeScaler,
-    wandb_logger,
-    get_grad_norm_,
-    train_one_epoch,
-    get_1d_sincos_pos_embed,
-    get_1d_sincos_pos_embed_from_grid,
-    interpolate_pos_embed,
-    adjust_learning_rate,
-    load_model,
-    patchify,
-    unpatchify,
-)
-
-# Import loss functions
-from .losses import (
-    ClipLoss,
-    SupConLoss,
-    mixco_nce,
-    mixco_1d,
-    mixco_timeseries,
-    soft_clip_loss,
-    gather_features,
-)
-
 __all__ = [
     # Training utilities
     'NativeScaler',
@@ -60,3 +34,38 @@ __all__ = [
     'gather_features',
 ]
 
+_TRAINING_EXPORTS = {
+    'NativeScaler',
+    'wandb_logger',
+    'get_grad_norm_',
+    'train_one_epoch',
+    'get_1d_sincos_pos_embed',
+    'get_1d_sincos_pos_embed_from_grid',
+    'interpolate_pos_embed',
+    'adjust_learning_rate',
+    'load_model',
+    'patchify',
+    'unpatchify',
+}
+
+_LOSS_EXPORTS = {
+    'ClipLoss',
+    'SupConLoss',
+    'mixco_nce',
+    'mixco_1d',
+    'mixco_timeseries',
+    'soft_clip_loss',
+    'gather_features',
+}
+
+
+def __getattr__(name):
+    if name in _TRAINING_EXPORTS:
+        from . import training
+
+        return getattr(training, name)
+    if name in _LOSS_EXPORTS:
+        from . import losses
+
+        return getattr(losses, name)
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")

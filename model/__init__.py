@@ -10,13 +10,26 @@ This package contains neural network models for multimodal brain signal encoding
 - DiffusionPrior: Diffusion-based prior model
 """
 
-from .Medformer import Medformer, MedformerBase, Model
-from .projector import FusionHead
-
 __all__ = [
     'Medformer',
-    'MedformerBase', 
+    'MedformerBase',
     'Model',
     'FusionHead',
 ]
 
+
+def __getattr__(name):
+    if name in {'Medformer', 'MedformerBase', 'Model'}:
+        from .Medformer import Medformer, MedformerBase, Model
+
+        exports = {
+            'Medformer': Medformer,
+            'MedformerBase': MedformerBase,
+            'Model': Model,
+        }
+        return exports[name]
+    if name == 'FusionHead':
+        from .projector import FusionHead
+
+        return FusionHead
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")

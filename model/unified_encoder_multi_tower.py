@@ -21,9 +21,7 @@ from einops.layers.torch import Rearrange
 from omegaconf import DictConfig, OmegaConf
 
 # Import custom encoder modules
-from .EEG_MedformerTS import eeg_encoder
-from .MEG_MedformerTS import meg_encoder
-from .fMRI_MedformerTS import fmri_encoder
+from .medformer_encoders import eeg_encoder, fmri_encoder, meg_encoder
 
 # Load configuration file (relative to project root)
 _current_dir = os.path.dirname(os.path.abspath(__file__))

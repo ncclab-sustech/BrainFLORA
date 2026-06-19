@@ -1,6 +1,7 @@
-<p align="center">
-  <strong>BrainFLORA: Uncovering Brain Concept Representation via Multimodal Neural Embeddings</strong>
-</p>
+<h1 align="center">
+  BrainFLORA: Uncovering Brain Concept Representation<br>
+  via Multimodal Neural Embeddings
+</h1>
 
 <p align="center">
   <a href="https://arxiv.org/abs/2507.09747"><img src="https://img.shields.io/badge/Paper-arXiv%3A2507.09747-B31B1B.svg" alt="Paper"></a>
@@ -16,7 +17,7 @@
   <img src="imgs/fig-framework_00.png" width="68%" alt="BrainFLORA framework">
 </p>
 
-BrainFLORA aligns EEG, MEG, and fMRI signals with visual-language representations for visual retrieval, image reconstruction, and image captioning. This repository keeps the original training scripts and adds command-line reproduction entry points for running the released checkpoints end to end.
+BrainFLORA is a reproducible multimodal neural embedding framework for EEG, MEG, and fMRI visual retrieval, image reconstruction, and image captioning. The repository provides unified command-line entry points for training, inference, and evaluation with the released checkpoints.
 
 ## News
 
@@ -196,23 +197,15 @@ python eval/evaluate_reconstruction_metrics.py \
 
 ### 3. Visual Captioning
 
-Generate woPrior caption token embeddings:
+Generate woPrior caption token embeddings and apply the caption diffusion prior:
 
 ```bash
-python eval/FLORA_inference_caption_2_embedding.py \
+python eval/FLORA_inference_caption_embeddings.py \
   --device cuda:0 \
-  --modalities eeg meg fmri \
-  --output-root features/FLORA \
-  --metrics-json outputs/caption_embedding/caption_woPrior_metrics.json
-```
-
-Apply the caption diffusion prior:
-
-```bash
-python eval/FLORA_inference_caption_prior_diffusion.py \
-  --device cuda:0 \
+  --stage all \
   --modalities eeg meg fmri \
   --features-root features/FLORA \
+  --metrics-json outputs/caption_embedding/caption_woPrior_metrics.json \
   --summary-json outputs/caption_embedding/caption_prior_summary.json
 ```
 
@@ -260,26 +253,36 @@ Caption/fMRI_caption/caption_fMRI_GT.json
 
 ## Quick Training
 
-The original training scripts are preserved for retraining and ablations. Update dataset paths in the configs or pass CLI arguments before launching.
+Unified training scripts are provided for retraining and ablations. Update dataset paths in the configs or pass CLI arguments before launching.
 
 Train retrieval encoders:
 
 ```bash
 # EEG
-python Retrieval/retrieval_joint_train_medformer.py \
-  --logger True \
+python Retrieval/train_retrieval.py \
+  --modality eeg \
   --gpu cuda:0 \
-  --output_dir outputs/contrast
+  --output-dir outputs/contrast
 
 # MEG
-python Retrieval/retrieval_joint_train_MEG_medformer.py \
-  --logger True \
+python Retrieval/train_retrieval.py \
+  --modality meg \
   --gpu cuda:0 \
-  --output_dir outputs/contrast
+  --output-dir outputs/contrast
 
 # fMRI
-python Retrieval/retrieval_joint_train_fMRI_medformer.py \
-  --logger True \
+python Retrieval/train_retrieval.py \
+  --modality fmri \
+  --gpu cuda:0 \
+  --output-dir outputs/contrast
+```
+
+Train the unified encoder for retrieval:
+
+```bash
+python train/train_unified_encoder.py \
+  --task retrieval \
+  --modalities eeg meg fmri \
   --gpu cuda:0 \
   --output_dir outputs/contrast
 ```
@@ -287,7 +290,8 @@ python Retrieval/retrieval_joint_train_fMRI_medformer.py \
 Train the unified encoder for reconstruction:
 
 ```bash
-python train/train_unified_encoder_highlevel_diffprior.py \
+python train/train_unified_encoder.py \
+  --task reconstruction \
   --modalities eeg meg fmri \
   --gpu cuda:0 \
   --output_dir outputs/contrast
@@ -296,16 +300,20 @@ python train/train_unified_encoder_highlevel_diffprior.py \
 Train the caption-aligned unified encoder:
 
 ```bash
-python train/train_unified_encoder_highlevel_diffprior_caption.py \
+python train/train_unified_encoder.py \
+  --task caption \
+  --use-caption \
   --modalities eeg meg fmri \
   --gpu cuda:0 \
   --output_dir outputs/contrast
 ```
 
-Distributed training:
+Distributed reconstruction training:
 
 ```bash
-accelerate launch train/train_unified_encoder_highlevel_diffprior_parallel.py \
+accelerate launch train/train_unified_encoder.py \
+  --task reconstruction \
+  --distributed \
   --modalities eeg meg fmri \
   --output_dir outputs/contrast
 ```
@@ -315,12 +323,12 @@ accelerate launch train/train_unified_encoder_highlevel_diffprior_parallel.py \
 ```text
 eval/                 Reproduction entry points for retrieval, reconstruction, and captioning
 Caption/              Caption references and BrainHub metric wrapper
-Retrieval/            Retrieval model and training scripts
+Retrieval/            Single-modality retrieval training entry point
 train/                Unified encoder training scripts
 model/, layers/       BrainFLORA model components
 configs/              Training and inference configs
 data_preparing/       Dataset loading and preprocessing code
-utils/                Shared utilities and metadata mappings
+utils/                Shared utilities
 imgs/                 README figures
 ```
 

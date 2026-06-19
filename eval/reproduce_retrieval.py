@@ -25,19 +25,6 @@ PROJECT_ROOT = Path(__file__).resolve().parents[1]
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
-from data_preparing import eegdatasets as eeg_dataset_module
-from data_preparing import fmri_datasets_joint_subjects as fmri_dataset_module
-from data_preparing import megdatasets_averaged as meg_dataset_module
-from data_preparing.eegdatasets import EEGDataset
-from data_preparing.fmri_datasets_joint_subjects import fMRIDataset
-from data_preparing.megdatasets_averaged import MEGDataset
-from model.EEG_MedformerTS import eeg_encoder
-from model.MEG_MedformerTS import meg_encoder
-from model.fMRI_MedformerTS import fmri_encoder
-from model.unified_encoder_multi_tower import UnifiedEncoder
-from utils.losses import ClipLoss
-
-
 DEFAULT_DATA_PATHS = {
     "eeg": Path("/vePFS-0x0d/visual/dataset/THINGS_EEG/Preprocessed_data_250Hz"),
     "meg": Path("/vePFS-0x0d/visual/dataset/THINGS_MEG/preprocessed_newsplit"),
@@ -118,6 +105,18 @@ PAPER_RETRIEVAL_METRICS = {
     },
 }
 
+eeg_dataset_module = None
+meg_dataset_module = None
+fmri_dataset_module = None
+EEGDataset = None
+MEGDataset = None
+fMRIDataset = None
+eeg_encoder = None
+meg_encoder = None
+fmri_encoder = None
+UnifiedEncoder = None
+ClipLoss = None
+
 
 def set_seed(seed: int) -> None:
     random.seed(seed)
@@ -155,13 +154,45 @@ def require_path(path: Path, label: str) -> None:
         raise FileNotFoundError(f"{label} does not exist: {path}")
 
 
+def load_runtime_modules() -> None:
+    global eeg_dataset_module, meg_dataset_module, fmri_dataset_module
+    global EEGDataset, MEGDataset, fMRIDataset, eeg_encoder, meg_encoder, fmri_encoder, UnifiedEncoder, ClipLoss
+    if EEGDataset is not None:
+        return
+    from data_preparing import eegdatasets as _eeg_dataset_module
+    from data_preparing import fmri_datasets_joint_subjects as _fmri_dataset_module
+    from data_preparing import megdatasets_averaged as _meg_dataset_module
+    from data_preparing.eegdatasets import EEGDataset as _EEGDataset
+    from data_preparing.fmri_datasets_joint_subjects import fMRIDataset as _fMRIDataset
+    from data_preparing.megdatasets_averaged import MEGDataset as _MEGDataset
+    from model.medformer_encoders import eeg_encoder as _eeg_encoder
+    from model.medformer_encoders import fmri_encoder as _fmri_encoder
+    from model.medformer_encoders import meg_encoder as _meg_encoder
+    from model.unified_encoder_multi_tower import UnifiedEncoder as _UnifiedEncoder
+    from utils.losses import ClipLoss as _ClipLoss
+
+    eeg_dataset_module = _eeg_dataset_module
+    meg_dataset_module = _meg_dataset_module
+    fmri_dataset_module = _fmri_dataset_module
+    EEGDataset = _EEGDataset
+    MEGDataset = _MEGDataset
+    fMRIDataset = _fMRIDataset
+    eeg_encoder = _eeg_encoder
+    meg_encoder = _meg_encoder
+    fmri_encoder = _fmri_encoder
+    UnifiedEncoder = _UnifiedEncoder
+    ClipLoss = _ClipLoss
+
+
 def configure_dataset_image_dirs(image_dirs: dict[str, Path]) -> None:
+    load_runtime_modules()
     eeg_dataset_module.img_directory_test = str(image_dirs["eeg"])
     meg_dataset_module.img_directory_test = str(image_dirs["meg"])
     fmri_dataset_module.img_directory_test = str(image_dirs["fmri"])
 
 
 def build_dataset(modality: str, subject: str, data_paths: dict[str, Path]):
+    load_runtime_modules()
     if modality == "eeg":
         return EEGDataset(str(data_paths["eeg"]), subjects=[subject], train=False)
     if modality == "meg":
@@ -182,6 +213,7 @@ def build_single_model(
     device: torch.device,
     single_checkpoints: dict[str, Path],
 ):
+    load_runtime_modules()
     model_cls = {"eeg": eeg_encoder, "meg": meg_encoder, "fmri": fmri_encoder}[modality]
     model = model_cls()
     require_path(single_checkpoints[modality], f"{modality} checkpoint")
@@ -197,6 +229,7 @@ def build_unified_model(
     single_checkpoints: dict[str, Path],
     unified_checkpoint: Path,
 ):
+    load_runtime_modules()
     for modality, checkpoint in single_checkpoints.items():
         require_path(checkpoint, f"{modality} checkpoint")
     require_path(unified_checkpoint, "unified checkpoint")
@@ -233,6 +266,7 @@ def evaluate_subject(
     k_values: list[int],
     data_paths: dict[str, Path],
 ):
+    load_runtime_modules()
     dataset = build_dataset(modality, subject, data_paths)
     loader = DataLoader(dataset, batch_size=batch_size, shuffle=False, num_workers=0, drop_last=False)
 

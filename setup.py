@@ -10,7 +10,7 @@ from setuptools import setup, find_packages
 setup(
     name="brainflora",
     version="0.1.0",
-    description="BrainFLORA: Brain-Language Open Retrieval and Analysis",
+    description="Reproducible multimodal neural embeddings for EEG, MEG, and fMRI decoding",
     author="BrainFLORA Team",
     python_requires=">=3.10",
     packages=find_packages(exclude=["configs", "imgs", "eval", "Retrieval"]),
@@ -25,7 +25,10 @@ setup(
         "torchvision>=0.15.2",
         "transformers",
         "diffusers",
+        "accelerate",
         "einops",
+        "omegaconf",
+        "reformer_pytorch",
         "tqdm",
         "clip",
         "open_clip_torch",
@@ -35,4 +38,3 @@ setup(
         "mne",
     ],
 )
-
