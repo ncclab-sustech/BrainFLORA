@@ -109,23 +109,11 @@ Use `data_preparing/` if you need to preprocess raw data yourself.
 
 ## Quick Run Experiments
 
-The commands below replace the notebook-only evaluation commands from the original README. Use smoke runs first to verify paths and checkpoints, then run the full commands.
+Run pretrained checkpoint inference and evaluation for visual retrieval, reconstruction, and captioning.
 
 ### 1. Visual Retrieval
 
-Smoke run:
-
-```bash
-python eval/reproduce_retrieval.py \
-  --device cuda:0 \
-  --models single unified \
-  --modalities fmri \
-  --subjects sub-01 \
-  --batch-size 32 \
-  --output-dir outputs/reproduction_smoke
-```
-
-Full checkpoint evaluation:
+Evaluate retrieval checkpoints:
 
 ```bash
 python eval/reproduce_retrieval.py \
@@ -146,21 +134,7 @@ outputs/reproduction/retrieval_reproduction_vs_paper.json
 
 ### 2. Visual Reconstruction
 
-High-level smoke run without SDXL image generation:
-
-```bash
-python eval/FLORA_inference_reconst.py \
-  --device cuda:0 \
-  --modalities fmri \
-  --subjects sub-01 \
-  --max-images 2 \
-  --prior-steps 1 \
-  --skip-image-generator \
-  --output-dir outputs/reconstruction_highlevel_smoke \
-  --summary-json outputs/reconstruction_highlevel_smoke/summary.json
-```
-
-Full image generation with cached SDXL/IP-Adapter assets:
+Generate reconstructed images with cached SDXL/IP-Adapter assets:
 
 ```bash
 python eval/FLORA_inference_reconst.py \
@@ -190,20 +164,6 @@ python eval/evaluate_reconstruction_metrics.py \
   --modalities eeg meg fmri \
   --gt-root /path/to/dataset_root \
   --output-dir outputs/reconstruction_metrics
-```
-
-For a fast metric smoke test:
-
-```bash
-python eval/evaluate_reconstruction_metrics.py \
-  --recon-root outputs/reconstruction_png_full \
-  --modalities fmri \
-  --subjects sub-01 \
-  --gt-root /path/to/dataset_root \
-  --metrics pixcorr ssim \
-  --max-images 2 \
-  --device cpu \
-  --output-dir outputs/reconstruction_metrics_smoke
 ```
 
 ### 3. Visual Captioning
