@@ -4,6 +4,12 @@
 </h1>
 
 <p align="center">
+  <a href="https://arxiv.org/abs/2507.09747"><img src="https://img.shields.io/badge/Paper-arXiv%3A2507.09747-B31B1B.svg" alt="Paper"></a>
+  <a href="https://huggingface.co/datasets/LidongYang/BrainFLORA"><img src="https://img.shields.io/badge/Data%20%26%20Checkpoints-Hugging%20Face-blue" alt="Hugging Face"></a>
+  <a href="./LICENSE"><img src="https://img.shields.io/badge/License-MIT-green.svg" alt="License"></a>
+</p>
+
+<p align="center">
   <a href="https://dongyangli.site/">Dongyang Li</a>,
   <a href="https://github.com/wojiao-yc">Haoyang Qin</a>,
   <a href="https://www.wormforce.net/members/mingyang-wu">Mingyang Wu</a>,
@@ -12,9 +18,7 @@
 </p>
 
 <p align="center">
-  <a href="https://arxiv.org/abs/2507.09747"><img src="https://img.shields.io/badge/Paper-arXiv%3A2507.09747-B31B1B.svg" alt="Paper"></a>
-  <a href="https://huggingface.co/datasets/LidongYang/BrainFLORA"><img src="https://img.shields.io/badge/Data%20%26%20Checkpoints-Hugging%20Face-blue" alt="Hugging Face"></a>
-  <a href="./LICENSE"><img src="https://img.shields.io/badge/License-MIT-green.svg" alt="License"></a>
+  Southern University of Science and Technology
 </p>
 
 <p align="center">
