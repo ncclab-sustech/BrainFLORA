@@ -1,4 +1,4 @@
-<h1 align="center">
+<h1 align="center" style="font-size: 1.8rem;">
   BrainFLORA: Uncovering Brain Concept Representation<br>
   via Multimodal Neural Embeddings
 </h1>
@@ -15,11 +15,10 @@
   <a href="https://www.wormforce.net/members/mingyang-wu">Mingyang Wu</a>,
   <a href="https://hedges0-0.github.io/">Chen Wei</a>,
   <a href="https://scholar.google.com/citations?user=UpP9hJ8AAAAJ&hl=en">Quanying Liu</a>
-</p>
-
-<p align="center">
+    <br>
   Southern University of Science and Technology
 </p>
+
 
 <p align="center">
   <img src="imgs/fig-overview_00.png" width="100%" alt="BrainFLORA overview">
@@ -328,29 +327,6 @@ accelerate launch train/train_unified_encoder.py \
   --distributed \
   --modalities eeg meg fmri \
   --output_dir outputs/contrast
-```
-
-## Repository Structure
-
-```text
-eval/                 Reproduction entry points for retrieval, reconstruction, and captioning
-Caption/              Caption references and BrainHub metric wrapper
-Retrieval/            Single-modality retrieval training entry point
-train/                Unified encoder training scripts
-model/, layers/       BrainFLORA model components
-configs/              Training and inference configs
-data_preparing/       Dataset loading and preprocessing code
-utils/                Shared utilities
-imgs/                 README figures
-```
-
-Large assets are ignored by Git and should be restored from releases or local cache:
-
-```text
-checkpoints/
-features/
-outputs/
-external_models/
 ```
 
 ## Citation
