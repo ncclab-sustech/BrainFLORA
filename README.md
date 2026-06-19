@@ -72,32 +72,6 @@ Shikra resources:
 
 ## Data and Checkpoints
 
-The recommended path is to use the preprocessed data and released checkpoints from [LidongYang/BrainFLORA](https://huggingface.co/datasets/LidongYang/BrainFLORA). The reproduction scripts assume this layout by default:
-
-```text
-BrainFLORA/
-  checkpoints/
-    eeg_01-06_01-46_150.pth
-    meg_01-11_14-50_150.pth
-    fmri_01-18_01-35_150.pth
-    Unified_EEG+MEG+fMRI_EEG_01-27_02-32_60.pth
-    reconstruction_checkpoints/150.pth
-    reconstruction_checkpoints/prior_diffusion/150.pth
-    caption_checkpoints/90.pth
-    caption_checkpoints/prior_diffusion/100.pth
-  features/
-  external_models/
-```
-
-Default dataset roots are under `/vePFS-0x0d/visual/dataset`. Override them when needed:
-
-```bash
-python eval/reproduce_retrieval.py \
-  --eeg-data-path /path/to/eeg \
-  --meg-data-path /path/to/meg \
-  --fmri-data-path /path/to/fmri
-```
-
 Raw datasets used by the original project:
 
 | Dataset | Link | Dataset | Link |
